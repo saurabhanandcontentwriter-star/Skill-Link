@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import Header from './components/Header';
 import Footer from './components/Footer';
@@ -8,14 +9,21 @@ import MentorProfile from './components/MentorProfile';
 import LiveSession from './components/LiveSession';
 import Profile from './components/Profile';
 import Chatbot from './components/Chatbot';
-import { Mentor, Workshop } from './types';
+import TasksDashboard from './components/TasksDashboard';
+import CertificateGenerator from './components/CertificateGenerator';
+import { Mentor, Workshop, UserAchievement, Badge } from './types';
+import { USER_ACHIEVEMENTS } from './constants';
+
+export type ActiveView = 'home' | 'mentor' | 'workshop' | 'profile' | 'tasks' | 'certificates';
 
 const App: React.FC = () => {
   const [isOnboarded, setIsOnboarded] = useState(false);
   const [isProfileComplete, setIsProfileComplete] = useState(false);
+  
+  const [activeView, setActiveView] = useState<ActiveView>('home');
   const [selectedMentor, setSelectedMentor] = useState<Mentor | null>(null);
   const [selectedWorkshop, setSelectedWorkshop] = useState<Workshop | null>(null);
-  const [isProfileVisible, setIsProfileVisible] = useState(false);
+  const [achievements, setAchievements] = useState<UserAchievement[]>(USER_ACHIEVEMENTS);
 
   const handleOnboardingComplete = () => {
     setIsOnboarded(true);
@@ -27,30 +35,42 @@ const App: React.FC = () => {
 
   const handleSelectMentor = (mentor: Mentor) => {
     setSelectedMentor(mentor);
-    setIsProfileVisible(false);
+    setActiveView('mentor');
   };
   
   const handleDeselectMentor = () => {
     setSelectedMentor(null);
+    setActiveView('home');
   }
 
   const handleSelectWorkshop = (workshop: Workshop) => {
     setSelectedWorkshop(workshop);
-    setIsProfileVisible(false);
+    setActiveView('workshop');
   };
 
   const handleDeselectWorkshop = () => {
     setSelectedWorkshop(null);
+    setActiveView('home');
   };
 
-  const handleShowProfile = () => {
-    setSelectedMentor(null);
-    setSelectedWorkshop(null);
-    setIsProfileVisible(true);
+  const handleNavigate = (view: ActiveView) => {
+    // Reset selections when navigating away from mentor/workshop views
+    if (view !== 'mentor') setSelectedMentor(null);
+    if (view !== 'workshop') setSelectedWorkshop(null);
+    setActiveView(view);
   };
 
-  const handleHideProfile = () => {
-    setIsProfileVisible(false);
+  const handleAwardBadge = (badge: Badge): boolean => {
+    // Prevent duplicate badges
+    if (!achievements.some(a => a.badgeId === badge.id)) {
+        const newAchievement: UserAchievement = {
+            badgeId: badge.id,
+            dateEarned: new Date().toISOString(),
+        };
+        setAchievements(prev => [...prev, newAchievement]);
+        return true; // Indicate that the badge was awarded
+    }
+    return false; // Indicate that the badge was already present
   };
 
 
@@ -63,21 +83,30 @@ const App: React.FC = () => {
   }
 
   const renderContent = () => {
-    if (isProfileVisible) {
-      return <Profile onBack={handleHideProfile} />;
+    switch (activeView) {
+      case 'mentor':
+        return selectedMentor && <MentorProfile mentor={selectedMentor} onBack={handleDeselectMentor} />;
+      case 'workshop':
+        return selectedWorkshop && <LiveSession workshop={selectedWorkshop} onBack={handleDeselectWorkshop} />;
+      case 'profile':
+        return <Profile onBack={() => handleNavigate('home')} achievements={achievements} />;
+      case 'tasks':
+        return <TasksDashboard 
+                  onBack={() => handleNavigate('home')} 
+                  achievements={achievements} 
+                  onAwardBadge={handleAwardBadge}
+                />;
+      case 'certificates':
+        return <CertificateGenerator onBack={() => handleNavigate('home')} />;
+      case 'home':
+      default:
+        return <HomeDashboard onSelectMentor={handleSelectMentor} onSelectWorkshop={handleSelectWorkshop} />;
     }
-    if (selectedMentor) {
-      return <MentorProfile mentor={selectedMentor} onBack={handleDeselectMentor} />;
-    }
-    if (selectedWorkshop) {
-      return <LiveSession workshop={selectedWorkshop} onBack={handleDeselectWorkshop} />;
-    }
-    return <HomeDashboard onSelectMentor={handleSelectMentor} onSelectWorkshop={handleSelectWorkshop} />;
   };
 
   return (
     <div className="min-h-screen bg-dark-slate text-white">
-      <Header onProfileClick={handleShowProfile} />
+      <Header onNavigate={handleNavigate} activeView={activeView} />
       <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {renderContent()}
       </main>

@@ -1,6 +1,6 @@
 
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
 import { Mentor, Message } from '../types';
 import StarRating from './StarRating';
 import { startChatSession } from '../services/geminiService';
@@ -18,29 +18,92 @@ const MentorProfile: React.FC<MentorProfileProps> = ({ mentor, onBack }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [micError, setMicError] = useState<string | null>(null);
+  
+  // Chat History & Pagination State
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+  const [hasMoreHistory, setHasMoreHistory] = useState(false);
+  const PAGE_SIZE = 10;
+  const STORAGE_KEY = `chat_history_${mentor.name}`;
+
   const chatRef = useRef<Chat | null>(null);
   const recognitionRef = useRef<any>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const chatContainerRef = useRef<HTMLDivElement>(null);
+  const fullHistoryRef = useRef<Message[]>([]);
+  const prevScrollHeightRef = useRef(0);
+  const shouldScrollToBottomRef = useRef(true);
 
+  // Restore scroll position when loading history
+  useLayoutEffect(() => {
+    if (!shouldScrollToBottomRef.current && chatContainerRef.current) {
+        const newHeight = chatContainerRef.current.scrollHeight;
+        const diff = newHeight - prevScrollHeightRef.current;
+        chatContainerRef.current.scrollTop = diff;
+    }
+  }, [messages]);
+
+  // Scroll to bottom only for new messages
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (shouldScrollToBottomRef.current) {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
   }, [messages, isLoading]);
 
   useEffect(() => {
+    // Reset state for new mentor selection
+    setMessages([]);
+    fullHistoryRef.current = [];
+    shouldScrollToBottomRef.current = true;
+    setHasMoreHistory(false);
+
     const systemInstruction = `You are ${mentor.name}, a ${mentor.title}. ${mentor.description}. Your role is to chat with a student who is interested in your mentorship. Be friendly, encouraging, and answer their questions about your skills and session offerings. Keep your responses conversational and relatively brief. Start the conversation by introducing yourself and asking how you can help.`;
     
+    const storedHistory = localStorage.getItem(STORAGE_KEY);
+
+    if (storedHistory) {
+        // Load history from local storage
+        try {
+            const parsedHistory = JSON.parse(storedHistory);
+            fullHistoryRef.current = parsedHistory;
+            
+            // Load initial batch (last PAGE_SIZE messages)
+            const initialBatch = parsedHistory.slice(-PAGE_SIZE);
+            setMessages(initialBatch);
+            setHasMoreHistory(parsedHistory.length > initialBatch.length);
+
+            // Start chat session (without sending auto-intro)
+            chatRef.current = startChatSession(systemInstruction);
+        } catch (e) {
+            console.error("Failed to parse chat history", e);
+            // Fallback to init if parse fails
+            initNewChat(systemInstruction);
+        }
+    } else {
+        // No history, start new chat
+        initNewChat(systemInstruction);
+    }
+  }, [mentor]);
+
+  const initNewChat = (systemInstruction: string) => {
     try {
         chatRef.current = startChatSession(systemInstruction);
         setIsLoading(true);
         chatRef.current.sendMessage({ message: "Introduce yourself." }).then(response => {
-            setMessages([{ role: 'model', text: response.text }]);
+            const modelMsg: Message = { role: 'model', text: response.text };
+            updateHistory(modelMsg);
+            setMessages([modelMsg]);
         }).finally(() => setIsLoading(false));
-
     } catch (error) {
         console.error("Failed to start chat session:", error);
-        setMessages([{ role: 'model', text: 'Sorry, the chat service is currently unavailable.' }]);
+        const errorMsg: Message = { role: 'model', text: 'Sorry, the chat service is currently unavailable.' };
+        setMessages([errorMsg]);
     }
-  }, [mentor]);
+  };
+
+  const updateHistory = (newMsg: Message) => {
+      fullHistoryRef.current = [...fullHistoryRef.current, newMsg];
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(fullHistoryRef.current));
+  };
 
   useEffect(() => {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
@@ -86,7 +149,7 @@ const MentorProfile: React.FC<MentorProfileProps> = ({ mentor, onBack }) => {
 
 
   const handleBooking = () => {
-    alert(`Opening UPI payment app for 76679264@upi to pay ₹${mentor.sessionPrice}...\n\nPayment will be verified automatically.`);
+    alert(`Opening UPI payment app for 76679264@upi to pay INR ${mentor.sessionPrice}...\n\nPayment will be verified automatically.`);
   };
 
   const handleSendMessage = async (e: React.FormEvent) => {
@@ -94,17 +157,22 @@ const MentorProfile: React.FC<MentorProfileProps> = ({ mentor, onBack }) => {
     const trimmedInput = inputValue.trim();
     if (!trimmedInput || isLoading || !chatRef.current) return;
 
-    const newMessages: Message[] = [...messages, { role: 'user', text: trimmedInput }];
-    setMessages(newMessages);
+    const userMsg: Message = { role: 'user', text: trimmedInput };
+    updateHistory(userMsg);
+    setMessages(prev => [...prev, userMsg]);
     setInputValue('');
     setIsLoading(true);
+    shouldScrollToBottomRef.current = true;
 
     try {
       const response = await chatRef.current.sendMessage({ message: trimmedInput });
-      setMessages(prev => [...prev, { role: 'model', text: response.text }]);
+      const modelMsg: Message = { role: 'model', text: response.text };
+      updateHistory(modelMsg);
+      setMessages(prev => [...prev, modelMsg]);
     } catch (error) {
       console.error("Error sending message:", error);
-      setMessages(prev => [...prev, { role: 'model', text: 'Sorry, something went wrong. Please try again.' }]);
+      const errorMsg: Message = { role: 'model', text: 'Sorry, something went wrong. Please try again.' };
+      setMessages(prev => [...prev, errorMsg]);
     } finally {
       setIsLoading(false);
     }
@@ -125,11 +193,40 @@ const MentorProfile: React.FC<MentorProfileProps> = ({ mentor, onBack }) => {
     }
   };
 
+  const handleScroll = () => {
+      if (chatContainerRef.current && chatContainerRef.current.scrollTop === 0 && hasMoreHistory && !isLoadingHistory) {
+          loadOlderMessages();
+      }
+  };
+
+  const loadOlderMessages = async () => {
+      setIsLoadingHistory(true);
+      shouldScrollToBottomRef.current = false;
+      
+      if (chatContainerRef.current) {
+          prevScrollHeightRef.current = chatContainerRef.current.scrollHeight;
+      }
+
+      // Simulate network delay for better UX
+      await new Promise(resolve => setTimeout(resolve, 800));
+
+      const currentDisplayCount = messages.length;
+      const totalCount = fullHistoryRef.current.length;
+      const nextCount = Math.min(totalCount, currentDisplayCount + PAGE_SIZE);
+      
+      // Get the next batch of messages (from end - nextCount to end - currentDisplayCount)
+      const nextBatch = fullHistoryRef.current.slice(-nextCount);
+      
+      setMessages(nextBatch);
+      setHasMoreHistory(totalCount > nextCount);
+      setIsLoadingHistory(false);
+  };
+
 
   return (
     <div className="animate-slide-in-fade">
       <button onClick={onBack} className="mb-6 flex items-center text-sm font-medium text-muted-gray hover:text-white transition-colors">
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
         </svg>
         Back to Dashboard
@@ -147,14 +244,14 @@ const MentorProfile: React.FC<MentorProfileProps> = ({ mentor, onBack }) => {
             </div>
             <div className="mt-8 w-full bg-slate-800/50 backdrop-blur-sm rounded-lg p-6 border border-slate-700">
               <h3 className="text-xl font-semibold text-white">1-on-1 Session</h3>
-              <p className="text-4xl font-extrabold text-white mt-2">₹{mentor.sessionPrice.toLocaleString('en-IN')}</p>
+              <p className="text-4xl font-extrabold text-white mt-2">INR {mentor.sessionPrice.toLocaleString('en-IN')}</p>
               <p className="text-sm text-muted-gray mt-1">per 60-minute session</p>
               <button
                 onClick={handleBooking}
                 className="mt-6 w-full flex items-center justify-center px-4 py-3 font-bold text-white bg-gradient-to-r from-electric-blue to-neon-purple rounded-lg shadow-lg hover:shadow-xl hover:shadow-electric-blue/40 transition-all duration-300 transform hover:-translate-y-1"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 mr-2"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"></rect><line x1="16" x2="16" y1="2" y2="6"></line><line x1="8" x2="8" y1="2" y2="6"></line><line x1="3" x2="21" y1="10" y2="10"></line></svg>
-                Pay ₹{mentor.sessionPrice.toLocaleString('en-IN')} via UPI
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 mr-2"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"></rect><line x1="16" x2="16" y1="2" y2="6"></line><line x1="8" x2="8" y1="2" y2="6"></line><line x1="3" x2="21" y1="10" y2="10"></line></svg>
+                Pay INR {mentor.sessionPrice.toLocaleString('en-IN')} via UPI
               </button>
               <p className="text-xs text-muted-gray/70 mt-4">76679264@upi | Payment verified automatically.</p>
             </div>
@@ -195,8 +292,18 @@ const MentorProfile: React.FC<MentorProfileProps> = ({ mentor, onBack }) => {
               )}
 
               {activeTab === 'chat' && (
-                <div className="flex-1 flex flex-col p-4 bg-slate-800/50 animate-slide-in-fade">
-                  <div className="flex-1 p-4 overflow-y-auto space-y-4">
+                <div className="flex-1 flex flex-col p-4 bg-slate-800/50 animate-slide-in-fade h-full">
+                  <div 
+                    ref={chatContainerRef}
+                    onScroll={handleScroll}
+                    className="flex-1 p-4 overflow-y-auto space-y-4"
+                  >
+                    {isLoadingHistory && (
+                        <div className="flex justify-center py-2">
+                             <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-electric-blue"></div>
+                        </div>
+                    )}
+                    
                     {messages.map((msg, index) => (
                       <div key={index} className={`flex items-end gap-2 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                         {msg.role === 'model' && <img src={mentor.avatarUrl} alt="Mentor Avatar" className="w-8 h-8 rounded-full bg-slate-700 self-start" />}
@@ -248,7 +355,7 @@ const MentorProfile: React.FC<MentorProfileProps> = ({ mentor, onBack }) => {
                         className="flex-shrink-0 p-2.5 rounded-full bg-electric-blue text-white disabled:bg-slate-600 disabled:cursor-not-allowed transition-colors"
                         aria-label="Send Message"
                         >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
                         </button>
                     </form>
                     {micError && <p className="text-xs text-red-400 text-center pt-1">{micError}</p>}

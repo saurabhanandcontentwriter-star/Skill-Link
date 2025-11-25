@@ -1,5 +1,4 @@
 
-
 // FIX: Import React to provide the 'React' namespace for React.ReactNode.
 import React from 'react';
 
@@ -37,6 +36,13 @@ export interface Course {
   description:string;
 }
 
+export interface RecommendedCourse {
+  title: string;
+  platform: string;
+  description: string;
+  reason: string;
+}
+
 export interface ProFeature {
   title: string;
   description: string;
@@ -56,4 +62,39 @@ export interface Notification {
   description: string;
   timestamp: string;
   read: boolean;
+}
+
+export interface NavLinkItem {
+  text: string;
+  href: string;
+  icon: React.ReactNode;
+  isFeature?: boolean;
+  view?: 'home' | 'tasks' | 'certificates';
+}
+
+export interface Task {
+  id: number;
+  text: string;
+  completed: boolean;
+  dueDate?: string | null;
+}
+
+export interface Badge {
+  id: string;
+  name: string;
+  description: string;
+  icon: string; // Emoji
+}
+
+export interface UserAchievement {
+  badgeId: string;
+  dateEarned: string;
+}
+
+export interface Certificate {
+  id: string;
+  recipientName: string;
+  courseName: string;
+  date: string;
+  signatureImage: string; // Base64 string of the signature
 }

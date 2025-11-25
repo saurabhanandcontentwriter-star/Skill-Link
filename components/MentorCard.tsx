@@ -1,4 +1,5 @@
 
+
 import React, { useState } from 'react';
 import type { Mentor } from '../types';
 import StarRating from './StarRating';
@@ -50,7 +51,7 @@ const MentorCard: React.FC<MentorCardProps> = ({ mentor, onSelect }) => {
 
           <div className="mt-auto pt-4">
               <p className="text-2xl font-bold text-white mb-3">
-                  ₹{mentor.sessionPrice.toLocaleString('en-IN')}
+                  INR {mentor.sessionPrice.toLocaleString('en-IN')}
                   <span className="text-sm font-normal text-muted-gray"> / session</span>
               </p>
               <div className="flex items-center gap-3">

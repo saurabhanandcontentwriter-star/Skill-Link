@@ -1,7 +1,9 @@
+
 import React, { useState, useEffect, useRef } from 'react';
-import { Logo, NOTIFICATIONS } from '../constants';
-import { Notification } from '../types';
+import { Logo, NOTIFICATIONS, NAV_LINKS } from '../constants';
+import { Notification, NavLinkItem } from '../types';
 import NotificationPanel from './NotificationPanel';
+import { ActiveView } from '../App';
 
 const NavLink: React.FC<{ href: string; icon: React.ReactNode; text: string; active?: boolean; onClick?: (e: React.MouseEvent) => void; }> = ({ href, icon, text, active, onClick }) => (
   <a 
@@ -19,10 +21,11 @@ const NavLink: React.FC<{ href: string; icon: React.ReactNode; text: string; act
 );
 
 interface HeaderProps {
-  onProfileClick: () => void;
+  onNavigate: (view: ActiveView) => void;
+  activeView: ActiveView;
 }
 
-const Header: React.FC<HeaderProps> = ({ onProfileClick }) => {
+const Header: React.FC<HeaderProps> = ({ onNavigate, activeView }) => {
   const [currentDateTime, setCurrentDateTime] = useState(new Date());
   const [notifications, setNotifications] = useState<Notification[]>(NOTIFICATIONS);
   const [hasUnread, setHasUnread] = useState<boolean>(false);
@@ -53,9 +56,13 @@ const Header: React.FC<HeaderProps> = ({ onProfileClick }) => {
     };
   }, []);
 
-  const handleNavClick = (feature: string, e: React.MouseEvent) => {
+  const handleNavClick = (e: React.MouseEvent, link: NavLinkItem) => {
     e.preventDefault();
-    alert(`${feature} feature coming soon!`);
+    if (link.isFeature) {
+      alert(`${link.text} feature coming soon!`);
+    } else if (link.view) {
+      onNavigate(link.view);
+    }
   };
 
   const handleNotificationClick = () => {
@@ -85,20 +92,33 @@ const Header: React.FC<HeaderProps> = ({ onProfileClick }) => {
   const formattedDate = currentDateTime.toLocaleDateString(undefined, dateOptions);
   const formattedTime = currentDateTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
+  const getActiveLinkText = () => {
+    if (activeView === 'home') return 'Home';
+    if (activeView === 'tasks') return 'Tasks';
+    if (activeView === 'certificates') return 'Certificates';
+    return '';
+  };
+
   return (
     <header className="bg-dark-slate/70 backdrop-blur-md sticky top-0 z-50 border-b border-slate-800">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           <div className="flex-shrink-0">
-            <a href="#" aria-label="Home">
+            <a href="#" onClick={(e) => handleNavClick(e, NAV_LINKS[0])} aria-label="Home">
               <Logo className="h-8 w-auto"/>
             </a>
           </div>
           <nav className="hidden md:flex md:items-center md:space-x-4">
-            <NavLink href="#" icon={<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>} text="Home" active />
-            <NavLink href="#" onClick={(e) => handleNavClick('Challenges', e)} icon={<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg>} text="Challenges" />
-            <NavLink href="#" onClick={(e) => handleNavClick('Mentors', e)} icon={<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>} text="Mentors" />
-            <NavLink href="#" onClick={(e) => handleNavClick('Community', e)} icon={<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>} text="Community" />
+            {NAV_LINKS.map((link) => (
+              <NavLink
+                key={link.text}
+                href={link.href}
+                icon={link.icon}
+                text={link.text}
+                active={getActiveLinkText() === link.text}
+                onClick={(e) => handleNavClick(e, link)}
+              />
+            ))}
           </nav>
           <div className="flex items-center gap-4">
             <div className="hidden lg:block text-right">
@@ -118,9 +138,9 @@ const Header: React.FC<HeaderProps> = ({ onProfileClick }) => {
               {isPanelOpen && <NotificationPanel notifications={notifications} onClose={() => setIsPanelOpen(false)} onDismiss={handleDismissNotification} />}
             </div>
 
-            <button onClick={onProfileClick} className="relative" aria-label="User Profile">
+            <button onClick={() => onNavigate('profile')} className="relative" aria-label="User Profile">
               <img 
-                className="h-9 w-9 rounded-full ring-2 ring-offset-2 ring-offset-dark-slate ring-electric-blue" 
+                className={`h-9 w-9 rounded-full ring-2 ring-offset-2 ring-offset-dark-slate ${activeView === 'profile' ? 'ring-aqua-green' : 'ring-electric-blue'}`}
                 src="https://api.dicebear.com/8.x/bottts/svg?seed=skilllink-user" 
                 alt="User avatar" 
               />
