@@ -1,7 +1,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { getInterviewQuestion, evaluateInterviewResponse, getInterviewerIntro } from '../services/geminiService';
-import { InterviewFeedback } from '../types';
+import { InterviewFeedback, VoiceStyle } from '../types';
 
 interface AiInterviewProps {
   onBack: () => void;
@@ -12,12 +12,14 @@ type Gender = 'male' | 'female';
 
 const TOPICS = ['React', 'Node.js', 'System Design', 'Behavioral', 'Web3', 'AI Concepts'];
 const DIFFICULTIES = ['Beginner', 'Intermediate', 'Advanced'];
+const VOICE_STYLES: VoiceStyle[] = ['Friendly', 'Formal', 'Calm', 'Energetic'];
 
 const AiInterview: React.FC<AiInterviewProps> = ({ onBack }) => {
   const [state, setState] = useState<InterviewState>('setup');
   const [selectedTopic, setSelectedTopic] = useState(TOPICS[0]);
   const [selectedDifficulty, setSelectedDifficulty] = useState(DIFFICULTIES[1]);
   const [selectedGender, setSelectedGender] = useState<Gender>('male');
+  const [selectedVoiceStyle, setSelectedVoiceStyle] = useState<VoiceStyle>('Friendly');
   
   // Interview Logic State
   const [isIntroPhase, setIsIntroPhase] = useState(true);
@@ -81,24 +83,41 @@ const AiInterview: React.FC<AiInterviewProps> = ({ onBack }) => {
       utterance.onstart = () => setIsSpeaking(true);
       utterance.onend = () => setIsSpeaking(false);
       
-      // Fine-tuning for "Lovely" Voice (Not Rude)
-      // Slower rate is generally perceived as calmer and more thoughtful.
-      utterance.rate = 0.85; 
+      // Tone Adjustment based on Voice Style
+      let pitch = 1;
+      let rate = 1;
+
+      switch (selectedVoiceStyle) {
+        case 'Friendly':
+          pitch = selectedGender === 'female' ? 1.1 : 1.05;
+          rate = 1.0;
+          break;
+        case 'Formal':
+          pitch = selectedGender === 'female' ? 1.0 : 0.95;
+          rate = 0.9;
+          break;
+        case 'Calm':
+          pitch = selectedGender === 'female' ? 0.95 : 0.9;
+          rate = 0.85;
+          break;
+        case 'Energetic':
+          pitch = selectedGender === 'female' ? 1.2 : 1.1;
+          rate = 1.15;
+          break;
+      }
+      utterance.pitch = pitch;
+      utterance.rate = rate;
 
       // Attempt to find high-quality Natural voices first, then specific Indian ones
       const voices = voicesRef.current;
       let preferredVoice;
 
       if (selectedGender === 'female') {
-          // Pitch slightly higher for female
-          utterance.pitch = 1.05;
           // Priority: Natural English (often higher quality) -> Indian English -> Generic English
           preferredVoice = voices.find(v => v.name.includes('Natural') && v.name.includes('Female'));
           if (!preferredVoice) preferredVoice = voices.find(v => v.lang === 'en-IN' && v.name.includes('Female'));
           if (!preferredVoice) preferredVoice = voices.find(v => v.name.includes('Google US English') || v.name.includes('Samantha'));
       } else {
-          // Pitch slightly lower for male
-          utterance.pitch = 0.9;
           preferredVoice = voices.find(v => v.name.includes('Natural') && v.name.includes('Male'));
           if (!preferredVoice) preferredVoice = voices.find(v => v.lang === 'en-IN' && v.name.includes('Male'));
           if (!preferredVoice) preferredVoice = voices.find(v => v.name.includes('Google UK English Male') || v.name.includes('Daniel'));
@@ -124,8 +143,8 @@ const AiInterview: React.FC<AiInterviewProps> = ({ onBack }) => {
     const interviewerName = selectedGender === 'male' ? 'Arjun' : 'Aditi';
 
     try {
-      // Get Persona Introduction
-      const introText = await getInterviewerIntro(interviewerName, selectedGender, selectedTopic);
+      // Get Persona Introduction with selected style
+      const introText = await getInterviewerIntro(interviewerName, selectedGender, selectedTopic, selectedVoiceStyle);
       setCurrentQuestion(introText);
       setIsLoading(false);
       speakText(introText);
@@ -150,7 +169,12 @@ const AiInterview: React.FC<AiInterviewProps> = ({ onBack }) => {
     try {
       if (isIntroPhase) {
         // Transition from Intro to First Question
-        const firstQuestion = await getInterviewQuestion(selectedTopic, selectedDifficulty, `User just introduced themselves saying: "${userAnswer}". Acknowledge this politely in Indian English style and ask the first question.`);
+        const firstQuestion = await getInterviewQuestion(
+            selectedTopic, 
+            selectedDifficulty, 
+            `User just introduced themselves saying: "${userAnswer}". Acknowledge this politely in Indian English style and ask the first question.`,
+            selectedVoiceStyle
+        );
         setIsIntroPhase(false);
         setFeedback(null);
         setCurrentQuestion(firstQuestion);
@@ -174,7 +198,7 @@ const AiInterview: React.FC<AiInterviewProps> = ({ onBack }) => {
     setUserAnswer('');
     setIsLoading(true);
     try {
-        const question = await getInterviewQuestion(selectedTopic, selectedDifficulty, currentQuestion);
+        const question = await getInterviewQuestion(selectedTopic, selectedDifficulty, currentQuestion, selectedVoiceStyle);
         setCurrentQuestion(question);
         speakText(question);
     } catch(e) {
@@ -228,9 +252,9 @@ const AiInterview: React.FC<AiInterviewProps> = ({ onBack }) => {
                     className="w-full h-full object-cover"
                 />
             </div>
-            <div className="mt-3 bg-slate-800 px-4 py-1 rounded-full border border-slate-700">
-                <span className="text-white font-semibold">{interviewerName}</span>
-                <span className="text-xs text-muted-gray ml-2">({selectedGender === 'male' ? 'He/Him' : 'She/Her'})</span>
+            <div className="mt-3 bg-slate-800 px-4 py-1 rounded-full border border-slate-700 text-center">
+                <span className="text-white font-semibold block">{interviewerName}</span>
+                <span className="text-xs text-electric-blue">({selectedVoiceStyle})</span>
             </div>
             {/* Voice Waves Animation */}
             {isSpeaking && (
@@ -305,6 +329,26 @@ const AiInterview: React.FC<AiInterviewProps> = ({ onBack }) => {
                              <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=200" className="w-16 h-16 rounded-full mb-2 object-cover" alt="Female" />
                             <span className="text-white font-semibold">Aditi</span>
                         </button>
+                    </div>
+                </div>
+
+                {/* Voice Style */}
+                <div>
+                    <label className="block text-sm font-medium text-muted-gray mb-3">Voice Style</label>
+                    <div className="grid grid-cols-2 gap-2">
+                        {VOICE_STYLES.map(style => (
+                            <button
+                                key={style}
+                                onClick={() => setSelectedVoiceStyle(style)}
+                                className={`px-3 py-2 rounded-lg text-center text-sm font-medium transition-all active:scale-95 border ${
+                                    selectedVoiceStyle === style
+                                    ? 'bg-neon-purple/20 border-neon-purple text-white'
+                                    : 'bg-slate-800 border-slate-700 text-muted-gray hover:border-slate-500'
+                                }`}
+                            >
+                                {style}
+                            </button>
+                        ))}
                     </div>
                 </div>
 
@@ -435,7 +479,7 @@ const AiInterview: React.FC<AiInterviewProps> = ({ onBack }) => {
                                         </div>
                                         
                                         <div>
-                                            <h4 className="text-sm font-semibold text-neon-purple uppercase tracking-wide mb-1">Voice Tone (Inferred)</h4>
+                                            <h4 className="text-sm font-semibold text-neon-purple uppercase tracking-wide mb-1">Voice Tone Analysis</h4>
                                             <p className="text-white italic">"{feedback.toneAnalysis}"</p>
                                         </div>
 

@@ -114,3 +114,5 @@ export interface AtsAnalysis {
   formattingIssues: string[];
   improvementTips: string[];
 }
+
+export type VoiceStyle = 'Friendly' | 'Formal' | 'Calm' | 'Energetic';

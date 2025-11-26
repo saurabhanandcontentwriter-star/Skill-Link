@@ -131,13 +131,14 @@ export const startChatSession = (systemInstruction?: string): Chat => {
 
 // --- Interview Features ---
 
-export const getInterviewerIntro = async (name: string, gender: string, topic: string): Promise<string> => {
+export const getInterviewerIntro = async (name: string, gender: string, topic: string, style: string = "Professional"): Promise<string> => {
   if (!ai) throw new Error("AI service not configured.");
 
   const prompt = `Act as an Indian technical interviewer named ${name} (${gender}). 
   You are conducting an interview for the topic: "${topic}".
+  Adopt a "${style}" tone and personality.
   
-  Generate a short, professional, and warm opening greeting in Indian English (e.g., use "Namaste" or "Hello", be polite). 
+  Generate a short, opening greeting in Indian English (e.g., use "Namaste" or "Hello", be ${style.toLowerCase()}). 
   Introduce yourself briefly and ask the candidate to introduce themselves. 
   Keep it under 3 sentences.`;
 
@@ -149,16 +150,18 @@ export const getInterviewerIntro = async (name: string, gender: string, topic: s
   return response.text.trim();
 }
 
-export const getInterviewQuestion = async (topic: string, difficulty: string, previousContext?: string): Promise<string> => {
+export const getInterviewQuestion = async (topic: string, difficulty: string, previousContext?: string, style: string = "Professional"): Promise<string> => {
   if (!ai) throw new Error("AI service not configured.");
 
   const context = previousContext ? `Context: ${previousContext}` : "This is the first question.";
+  const styleInstruction = style ? `Adopt a "${style}" tone.` : "";
   
   const prompt = `Act as an Indian technical interviewer. The topic is: "${topic}" at a "${difficulty}" level.
+  ${styleInstruction}
   ${context}
   
   Generate ONE single, clear interview question relevant to this topic and difficulty. 
-  If the context implies the user just introduced themselves, acknowledge it briefly and politely (e.g., "Thanks for sharing...") before asking the technical question.
+  If the context implies the user just introduced themselves, acknowledge it briefly (e.g., "Thanks for sharing...") before asking the technical question.
   Do not add long filler text. Just the acknowledgement (if needed) and the question.`;
 
   const response = await ai.models.generateContent({
