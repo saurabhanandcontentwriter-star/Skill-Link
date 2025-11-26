@@ -5,9 +5,12 @@ import { Certificate } from '../types';
 import html2canvas from 'html2canvas';
 // @ts-ignore
 import { jsPDF } from 'jspdf';
+import UpgradeModal from './UpgradeModal';
 
 interface CertificateGeneratorProps {
   onBack: () => void;
+  isPro?: boolean;
+  onUpgrade?: () => void;
 }
 
 type TemplateType = 'modern' | 'classic' | 'minimal';
@@ -19,7 +22,7 @@ const SIGNATURE_FONTS = [
   { name: 'Allura', family: '"Allura", cursive' },
 ];
 
-const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({ onBack }) => {
+const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({ onBack, isPro = false, onUpgrade }) => {
   const [recipientName, setRecipientName] = useState('SkillLink User');
   const [courseName, setCourseName] = useState('Introduction to AI Mastery');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
@@ -30,6 +33,9 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({ onBack }) =
   const [selectedTemplate, setSelectedTemplate] = useState<TemplateType>('modern');
   const [validationError, setValidationError] = useState<string | null>(null);
   
+  // Upgrade Modal State for Unlock flow
+  const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
+
   // Signature State
   const [signatureMode, setSignatureMode] = useState<SignatureMode>('draw');
   const [typedSignature, setTypedSignature] = useState('');
@@ -60,7 +66,7 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({ onBack }) =
 
   useEffect(() => {
     // Initialize drawing canvas context settings when mode is draw
-    if (signatureMode === 'draw') {
+    if (signatureMode === 'draw' && isPro) {
         const canvas = canvasRef.current;
         if (canvas) {
         const ctx = canvas.getContext('2d');
@@ -71,14 +77,14 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({ onBack }) =
         }
         }
     }
-  }, [signatureMode]);
+  }, [signatureMode, isPro]);
 
   // Effect to handle Text Signature Generation (Type AND Voice)
   useEffect(() => {
-    if (signatureMode === 'type' || signatureMode === 'voice') {
+    if ((signatureMode === 'type' || signatureMode === 'voice') && isPro) {
         generateTextSignature();
     }
-  }, [typedSignature, selectedFont, signatureMode]);
+  }, [typedSignature, selectedFont, signatureMode, isPro]);
 
   const generateTextSignature = () => {
     if (!typedSignature.trim()) {
@@ -150,6 +156,7 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({ onBack }) =
   };
 
   const startDrawing = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+    if (!isPro) return;
     setIsDrawing(true);
     setValidationError(null); // Clear errors when user starts drawing/fixing
     const canvas = canvasRef.current;
@@ -165,7 +172,7 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({ onBack }) =
   };
 
   const draw = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
-    if (!isDrawing) return;
+    if (!isDrawing || !isPro) return;
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
@@ -250,6 +257,7 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({ onBack }) =
   };
   
   const startListening = () => {
+    if (!isPro) return;
     setVoiceError(null);
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     
@@ -310,6 +318,7 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({ onBack }) =
   };
 
   const handleGenerate = () => {
+    if (!isPro) return;
     let error = null;
 
     if (!hasSignature) {
@@ -553,14 +562,35 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({ onBack }) =
   };
 
   return (
-    <div className="animate-slide-in-fade max-w-6xl mx-auto">
+    <div className="animate-slide-in-fade max-w-6xl mx-auto relative">
       <button onClick={onBack} className="mb-6 flex items-center text-sm font-medium text-muted-gray hover:text-white transition-all active:scale-95">
         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
         </svg>
         Back to Dashboard
       </button>
 
-      <div className="bg-slate-900/30 backdrop-blur-md border border-slate-700 rounded-2xl p-6 sm:p-8 shadow-2xl shadow-electric-blue/10">
+      {/* Locked Overlay for Non-Pro Users */}
+      {!isPro && (
+        <div className="absolute inset-0 z-40 flex flex-col items-center justify-center bg-dark-slate/80 backdrop-blur-sm rounded-2xl mt-12">
+            <div className="text-center p-8 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl max-w-lg animate-pop-in">
+                <div className="flex justify-center mb-4">
+                    <span className="p-4 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full shadow-lg">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                    </span>
+                </div>
+                <h2 className="text-3xl font-bold text-white mb-2">Premium Feature</h2>
+                <p className="text-muted-gray mb-6">Upgrade to SkillLink Pro to generate unlimited verified certificates, access AI interviews, and more.</p>
+                <button 
+                    onClick={() => setIsUpgradeModalOpen(true)}
+                    className="px-8 py-3 bg-gradient-to-r from-aqua-green to-neon-purple text-white font-bold rounded-lg shadow-lg hover:shadow-neon-purple/40 transition-all transform hover:scale-105 active:scale-95"
+                >
+                    Unlock Now
+                </button>
+            </div>
+        </div>
+      )}
+
+      <div className={`bg-slate-900/30 backdrop-blur-md border border-slate-700 rounded-2xl p-6 sm:p-8 shadow-2xl shadow-electric-blue/10 ${!isPro ? 'filter blur-sm pointer-events-none select-none opacity-50' : ''}`}>
         <div className="flex items-center gap-4 mb-6">
           <div className="flex-shrink-0 h-12 w-12 flex items-center justify-center rounded-full bg-electric-blue/20 text-electric-blue">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-7 h-7"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
@@ -868,6 +898,7 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({ onBack }) =
           </div>
         )}
       </div>
+      {isUpgradeModalOpen && <UpgradeModal onClose={() => setIsUpgradeModalOpen(false)} onUpgrade={onUpgrade} />}
     </div>
   );
 };

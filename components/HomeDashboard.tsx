@@ -14,6 +14,7 @@ import AiRecommendations from './AiRecommendations';
 interface HomeDashboardProps {
   onSelectMentor: (mentor: Mentor) => void;
   onSelectWorkshop: (workshop: Workshop) => void;
+  onUpgrade?: () => void;
 }
 
 // Mock data to simulate a logged-in user. In a real app, this would come from context or a hook.
@@ -22,7 +23,7 @@ const mockUser = {
 };
 
 
-const HomeDashboard: React.FC<HomeDashboardProps> = ({ onSelectMentor, onSelectWorkshop }) => {
+const HomeDashboard: React.FC<HomeDashboardProps> = ({ onSelectMentor, onSelectWorkshop, onUpgrade }) => {
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
   const [selectedProFeature, setSelectedProFeature] = useState<ProFeature | null>(null);
   const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
@@ -189,7 +190,7 @@ const HomeDashboard: React.FC<HomeDashboardProps> = ({ onSelectMentor, onSelectW
 
       {selectedCourse && <CourseModal course={selectedCourse} onClose={handleCloseCourseModal} />}
       {selectedProFeature && <ProFeatureModal feature={selectedProFeature} onClose={handleCloseProFeatureModal} />}
-      {isUpgradeModalOpen && <UpgradeModal onClose={() => setIsUpgradeModalOpen(false)} />}
+      {isUpgradeModalOpen && <UpgradeModal onClose={() => setIsUpgradeModalOpen(false)} onUpgrade={onUpgrade} />}
       {isChallengeModalOpen && <ChallengeModal onClose={() => setIsChallengeModalOpen(false)} />}
     </div>
   );

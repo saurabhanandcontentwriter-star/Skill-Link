@@ -69,7 +69,7 @@ export interface NavLinkItem {
   href: string;
   icon: React.ReactNode;
   isFeature?: boolean;
-  view?: 'home' | 'tasks' | 'certificates' | 'interview';
+  view?: 'home' | 'tasks' | 'certificates' | 'interview' | 'ats';
 }
 
 export interface Task {
@@ -104,4 +104,13 @@ export interface InterviewFeedback {
   feedback: string;
   toneAnalysis: string;
   suggestedImprovement: string;
+  proficiency: 'Expert' | 'Good' | 'Average' | 'Needs Improvement';
+}
+
+export interface AtsAnalysis {
+  matchScore: number; // 0-100
+  summary: string;
+  missingKeywords: string[];
+  formattingIssues: string[];
+  improvementTips: string[];
 }

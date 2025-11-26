@@ -1,6 +1,6 @@
 
 import { GoogleGenAI, Chat, Type } from "@google/genai";
-import type { GroundedResponse, GroundingSource, RecommendedCourse, Task, InterviewFeedback } from '../types';
+import type { GroundedResponse, GroundingSource, RecommendedCourse, Task, InterviewFeedback, AtsAnalysis } from '../types';
 
 let ai: GoogleGenAI | null = null;
 
@@ -177,11 +177,13 @@ export const evaluateInterviewResponse = async (question: string, answer: string
   Candidate Answer: "${answer}"
 
   Analyze the answer for technical correctness, clarity, and voice tone (inferred from text).
+  
   Provide:
   1. A rating from 1-10.
   2. Brief feedback/remarks on the content.
   3. Tone analysis (e.g., confident, hesitant, vague, precise).
   4. A suggested improvement or better way to answer.
+  5. A proficiency classification: EXACTLY one of 'Expert', 'Good', 'Average', or 'Needs Improvement'.
 
   Respond in valid JSON format.`;
 
@@ -196,12 +198,80 @@ export const evaluateInterviewResponse = async (question: string, answer: string
           rating: { type: Type.INTEGER },
           feedback: { type: Type.STRING },
           toneAnalysis: { type: Type.STRING },
-          suggestedImprovement: { type: Type.STRING }
+          suggestedImprovement: { type: Type.STRING },
+          proficiency: { type: Type.STRING, enum: ['Expert', 'Good', 'Average', 'Needs Improvement'] }
         },
-        required: ["rating", "feedback", "toneAnalysis", "suggestedImprovement"]
+        required: ["rating", "feedback", "toneAnalysis", "suggestedImprovement", "proficiency"]
       }
     }
   });
 
   return JSON.parse(response.text) as InterviewFeedback;
+};
+
+
+// --- ATS Resume Checker ---
+
+export const analyzeResume = async (
+  jobDescription: string, 
+  resumeContent: { type: 'text', content: string } | { type: 'file', data: string, mimeType: string }
+): Promise<AtsAnalysis> => {
+  if (!ai) throw new Error("AI service not configured.");
+
+  const instructions = `You are an expert Applicant Tracking System (ATS) and Hiring Manager.
+  
+  Job Description:
+  "${jobDescription}"
+
+  Analyze how well the candidate's resume matches the job description.
+  
+  Provide:
+  1. A Match Score (0-100).
+  2. A brief summary of the fit.
+  3. List of Missing Keywords/Skills that are in the JD but missing from the resume.
+  4. Formatting or Structural Issues (if any inferred).
+  5. 3 Actionable Tips to improve the resume for this specific role.
+
+  Respond in valid JSON format.`;
+
+  let contents;
+
+  if (resumeContent.type === 'file') {
+      // Multimodal request: Text Instructions + PDF Base64
+      contents = {
+          parts: [
+              { text: instructions + "\n\nAnalyze the attached resume file." },
+              {
+                  inlineData: {
+                      mimeType: resumeContent.mimeType,
+                      data: resumeContent.data
+                  }
+              }
+          ]
+      };
+  } else {
+      // Text-only request
+      contents = instructions + `\n\nCandidate Resume Content:\n"${resumeContent.content}"`;
+  }
+
+  const response = await ai.models.generateContent({
+    model: "gemini-2.5-flash",
+    contents: contents,
+    config: {
+      responseMimeType: "application/json",
+      responseSchema: {
+        type: Type.OBJECT,
+        properties: {
+          matchScore: { type: Type.INTEGER },
+          summary: { type: Type.STRING },
+          missingKeywords: { type: Type.ARRAY, items: { type: Type.STRING } },
+          formattingIssues: { type: Type.ARRAY, items: { type: Type.STRING } },
+          improvementTips: { type: Type.ARRAY, items: { type: Type.STRING } }
+        },
+        required: ["matchScore", "summary", "missingKeywords", "formattingIssues", "improvementTips"]
+      }
+    }
+  });
+
+  return JSON.parse(response.text) as AtsAnalysis;
 };

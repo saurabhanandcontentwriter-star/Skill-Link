@@ -4,9 +4,10 @@ import { PRO_FEATURES } from '../constants';
 
 interface UpgradeModalProps {
   onClose: () => void;
+  onUpgrade?: () => void;
 }
 
-const UpgradeModal: React.FC<UpgradeModalProps> = ({ onClose }) => {
+const UpgradeModal: React.FC<UpgradeModalProps> = ({ onClose, onUpgrade }) => {
     const [view, setView] = useState<'features' | 'payment_options' | 'card' | 'crypto'>('features');
     const [cardDetails, setCardDetails] = useState({ number: '', expiry: '', cvc: '', name: '' });
 
@@ -23,6 +24,7 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({ onClose }) => {
     }, [onClose]);
 
     const handlePaymentSuccess = (method: string) => {
+        if (onUpgrade) onUpgrade();
         if (method === 'card') {
             alert('Payment successful! Welcome to SkillLink Pro.');
         } else {

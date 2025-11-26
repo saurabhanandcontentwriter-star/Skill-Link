@@ -35,9 +35,10 @@ const referrals = [
 interface ProfileProps {
   onBack: () => void;
   achievements: UserAchievement[];
+  onUpgrade?: () => void;
 }
 
-const Profile: React.FC<ProfileProps> = ({ onBack, achievements }) => {
+const Profile: React.FC<ProfileProps> = ({ onBack, achievements, onUpgrade }) => {
   const [activeTab, setActiveTab] = useState('payments');
   const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
   const [dateFilter, setDateFilter] = useState('all');
@@ -352,7 +353,7 @@ const Profile: React.FC<ProfileProps> = ({ onBack, achievements }) => {
             </div>
         </div>
       </div>
-      {isUpgradeModalOpen && <UpgradeModal onClose={() => setIsUpgradeModalOpen(false)} />}
+      {isUpgradeModalOpen && <UpgradeModal onClose={() => setIsUpgradeModalOpen(false)} onUpgrade={onUpgrade} />}
     </div>
   );
 };

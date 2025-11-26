@@ -80,24 +80,31 @@ const AiInterview: React.FC<AiInterviewProps> = ({ onBack }) => {
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.onstart = () => setIsSpeaking(true);
       utterance.onend = () => setIsSpeaking(false);
-      utterance.rate = 0.95; // Slightly slower for better clarity
-      utterance.pitch = selectedGender === 'female' ? 1.1 : 0.9;
       
-      // Attempt to find Indian English Voices
+      // Fine-tuning for "Lovely" Voice (Not Rude)
+      // Slower rate is generally perceived as calmer and more thoughtful.
+      utterance.rate = 0.85; 
+
+      // Attempt to find high-quality Natural voices first, then specific Indian ones
       const voices = voicesRef.current;
       let preferredVoice;
 
       if (selectedGender === 'female') {
-          // Try to find Indian Female, fallback to generic Female or English
-          preferredVoice = voices.find(v => (v.lang === 'en-IN' || v.lang.includes('IN')) && v.name.includes('Female'));
+          // Pitch slightly higher for female
+          utterance.pitch = 1.05;
+          // Priority: Natural English (often higher quality) -> Indian English -> Generic English
+          preferredVoice = voices.find(v => v.name.includes('Natural') && v.name.includes('Female'));
+          if (!preferredVoice) preferredVoice = voices.find(v => v.lang === 'en-IN' && v.name.includes('Female'));
           if (!preferredVoice) preferredVoice = voices.find(v => v.name.includes('Google US English') || v.name.includes('Samantha'));
       } else {
-          // Try to find Indian Male, fallback to generic Male or English
-          preferredVoice = voices.find(v => (v.lang === 'en-IN' || v.lang.includes('IN')) && v.name.includes('Male'));
+          // Pitch slightly lower for male
+          utterance.pitch = 0.9;
+          preferredVoice = voices.find(v => v.name.includes('Natural') && v.name.includes('Male'));
+          if (!preferredVoice) preferredVoice = voices.find(v => v.lang === 'en-IN' && v.name.includes('Male'));
           if (!preferredVoice) preferredVoice = voices.find(v => v.name.includes('Google UK English Male') || v.name.includes('Daniel'));
       }
       
-      // Absolute fallback if specific gendered Indian voice not found
+      // Fallback
       if (!preferredVoice) {
          preferredVoice = voices.find(v => v.lang === 'en-IN');
       }
@@ -193,19 +200,32 @@ const AiInterview: React.FC<AiInterviewProps> = ({ onBack }) => {
     }
   };
 
+  const getProficiencyColor = (level: string) => {
+    switch (level) {
+        case 'Expert': return 'bg-green-500 text-white';
+        case 'Good': return 'bg-blue-500 text-white';
+        case 'Average': return 'bg-yellow-500 text-black';
+        case 'Needs Improvement': return 'bg-red-500 text-white';
+        default: return 'bg-slate-600 text-muted-gray';
+    }
+  };
+
   // Avatar Component
   const Avatar = () => {
-      // Determine seed based on gender
-      const seed = selectedGender === 'male' ? 'Felix' : 'Aneka';
+      // Professional real avatar URLs
+      const maleImage = "https://images.unsplash.com/photo-1566492031773-4f4e44671857?auto=format&fit=crop&q=80&w=800";
+      const femaleImage = "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=800";
+      
+      const avatarSrc = selectedGender === 'male' ? maleImage : femaleImage;
       const interviewerName = selectedGender === 'male' ? 'Arjun' : 'Aditi';
 
       return (
         <div className="relative flex flex-col justify-center items-center my-6">
             <div className={`relative w-36 h-36 rounded-full overflow-hidden border-4 transition-all duration-300 ${isSpeaking ? 'border-electric-blue shadow-[0_0_30px_rgba(0,102,255,0.6)] scale-105' : 'border-slate-700'}`}>
                 <img 
-                    src={`https://api.dicebear.com/8.x/avataaars/svg?seed=${seed}&backgroundColor=b6e3f4`} 
+                    src={avatarSrc} 
                     alt="AI Interviewer" 
-                    className="w-full h-full object-cover bg-slate-800"
+                    className="w-full h-full object-cover"
                 />
             </div>
             <div className="mt-3 bg-slate-800 px-4 py-1 rounded-full border border-slate-700">
@@ -271,7 +291,7 @@ const AiInterview: React.FC<AiInterviewProps> = ({ onBack }) => {
                                 : 'bg-slate-800/50 border-slate-700 hover:bg-slate-800'
                             }`}
                         >
-                            <img src="https://api.dicebear.com/8.x/avataaars/svg?seed=Felix&backgroundColor=b6e3f4" className="w-16 h-16 rounded-full mb-2" alt="Male" />
+                            <img src="https://images.unsplash.com/photo-1566492031773-4f4e44671857?auto=format&fit=crop&q=80&w=200" className="w-16 h-16 rounded-full mb-2 object-cover" alt="Male" />
                             <span className="text-white font-semibold">Arjun</span>
                         </button>
                         <button
@@ -282,7 +302,7 @@ const AiInterview: React.FC<AiInterviewProps> = ({ onBack }) => {
                                 : 'bg-slate-800/50 border-slate-700 hover:bg-slate-800'
                             }`}
                         >
-                             <img src="https://api.dicebear.com/8.x/avataaars/svg?seed=Aneka&backgroundColor=b6e3f4" className="w-16 h-16 rounded-full mb-2" alt="Female" />
+                             <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=200" className="w-16 h-16 rounded-full mb-2 object-cover" alt="Female" />
                             <span className="text-white font-semibold">Aditi</span>
                         </button>
                     </div>
@@ -391,33 +411,41 @@ const AiInterview: React.FC<AiInterviewProps> = ({ onBack }) => {
                     ) : (
                         <div className="max-w-3xl mx-auto animate-slide-in-bottom">
                             <div className="bg-slate-800/80 border border-slate-600 rounded-xl p-6 relative overflow-hidden">
-                                {/* Rating Badge */}
-                                <div className="absolute top-0 right-0 p-4 bg-slate-900/50 rounded-bl-xl border-l border-b border-slate-700">
-                                    <p className="text-xs text-muted-gray uppercase tracking-widest text-center">Score</p>
-                                    <p className={`text-3xl font-bold text-center ${feedback.rating >= 7 ? 'text-green-400' : feedback.rating >= 4 ? 'text-yellow-400' : 'text-red-400'}`}>
+                                {/* Rating Badge with Remarks */}
+                                <div className="absolute top-0 right-0 p-4 bg-slate-900/50 rounded-bl-xl border-l border-b border-slate-700 text-center w-48">
+                                    <p className="text-xs text-muted-gray uppercase tracking-widest mb-1">Score</p>
+                                    <p className={`text-3xl font-bold mb-1 ${feedback.rating >= 7 ? 'text-green-400' : feedback.rating >= 4 ? 'text-yellow-400' : 'text-red-400'}`}>
                                         {feedback.rating}/10
+                                    </p>
+                                    <div className={`text-xs font-bold px-2 py-1 rounded mb-2 ${getProficiencyColor(feedback.proficiency)}`}>
+                                        {feedback.proficiency}
+                                    </div>
+                                    <p className="text-xs text-slate-300 italic px-2 border-t border-slate-700 pt-2 leading-tight">
+                                        "{feedback.feedback.substring(0, 50)}{feedback.feedback.length > 50 ? '...' : ''}"
                                     </p>
                                 </div>
 
-                                <h3 className="text-xl font-bold text-white mb-4">Feedback & Remarks</h3>
-                                
-                                <div className="space-y-4">
-                                    <div>
-                                        <h4 className="text-sm font-semibold text-aqua-green uppercase tracking-wide mb-1">Content Analysis</h4>
-                                        <p className="text-muted-gray">{feedback.feedback}</p>
-                                    </div>
+                                <div className="pr-48"> {/* Padding to avoid overlap with absolute box */}
+                                    <h3 className="text-xl font-bold text-white mb-4">Detailed Feedback</h3>
                                     
-                                    <div>
-                                        <h4 className="text-sm font-semibold text-neon-purple uppercase tracking-wide mb-1">Voice Tone (Inferred)</h4>
-                                        <p className="text-white italic">"{feedback.toneAnalysis}"</p>
-                                    </div>
+                                    <div className="space-y-4">
+                                        <div>
+                                            <h4 className="text-sm font-semibold text-aqua-green uppercase tracking-wide mb-1">Remarks</h4>
+                                            <p className="text-muted-gray">{feedback.feedback}</p>
+                                        </div>
+                                        
+                                        <div>
+                                            <h4 className="text-sm font-semibold text-neon-purple uppercase tracking-wide mb-1">Voice Tone (Inferred)</h4>
+                                            <p className="text-white italic">"{feedback.toneAnalysis}"</p>
+                                        </div>
 
-                                    <div className="bg-slate-700/30 p-4 rounded-lg border border-slate-600/50">
-                                        <h4 className="text-sm font-semibold text-white uppercase tracking-wide mb-2 flex items-center gap-2">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-yellow-400"><path d="M2 12h20"></path><path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-6"></path><path d="M22 12h-2.22a2 2 0 0 0-1.78 1 2 2 0 0 1-1.78 1h-8.44a2 2 0 0 1-1.78-1 2 2 0 0 0-1.78-1H2"></path></svg>
-                                            Suggested Answer
-                                        </h4>
-                                        <p className="text-sm text-slate-300">{feedback.suggestedImprovement}</p>
+                                        <div className="bg-slate-700/30 p-4 rounded-lg border border-slate-600/50">
+                                            <h4 className="text-sm font-semibold text-white uppercase tracking-wide mb-2 flex items-center gap-2">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-yellow-400"><path d="M2 12h20"></path><path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-6"></path><path d="M22 12h-2.22a2 2 0 0 0-1.78 1 2 2 0 0 1-1.78 1h-8.44a2 2 0 0 1-1.78-1 2 2 0 0 0-1.78-1H2"></path></svg>
+                                                Suggested Answer
+                                            </h4>
+                                            <p className="text-sm text-slate-300">{feedback.suggestedImprovement}</p>
+                                        </div>
                                     </div>
                                 </div>
                             </div>

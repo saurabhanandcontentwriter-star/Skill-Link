@@ -9,7 +9,7 @@ const NavLink: React.FC<{ href: string; icon: React.ReactNode; text: string; act
   <a 
     href={href}
     onClick={onClick}
-    className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 ${
+    className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 active:scale-95 ${
       active 
         ? 'bg-electric-blue/10 text-electric-blue' 
         : 'text-muted-gray hover:bg-slate-700/50 hover:text-white'
@@ -23,9 +23,10 @@ const NavLink: React.FC<{ href: string; icon: React.ReactNode; text: string; act
 interface HeaderProps {
   onNavigate: (view: ActiveView) => void;
   activeView: ActiveView;
+  isPro?: boolean;
 }
 
-const Header: React.FC<HeaderProps> = ({ onNavigate, activeView }) => {
+const Header: React.FC<HeaderProps> = ({ onNavigate, activeView, isPro = false }) => {
   const [currentDateTime, setCurrentDateTime] = useState(new Date());
   const [notifications, setNotifications] = useState<Notification[]>(NOTIFICATIONS);
   const [hasUnread, setHasUnread] = useState<boolean>(false);
@@ -101,6 +102,7 @@ const Header: React.FC<HeaderProps> = ({ onNavigate, activeView }) => {
     if (activeView === 'tasks') return 'Tasks';
     if (activeView === 'certificates') return 'Certificates';
     if (activeView === 'interview') return 'Interview';
+    if (activeView === 'ats') return 'Resume Checker';
     return '';
   };
 
@@ -134,7 +136,7 @@ const Header: React.FC<HeaderProps> = ({ onNavigate, activeView }) => {
             <div className="relative" ref={notificationRef}>
               <button
                 onClick={handleNotificationClick}
-                className="relative text-muted-gray hover:text-white transition-colors p-2 rounded-full hover:bg-slate-700/50"
+                className="relative text-muted-gray hover:text-white transition-colors p-2 rounded-full hover:bg-slate-700/50 active:scale-95"
                 aria-label="Notifications"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
@@ -150,13 +152,20 @@ const Header: React.FC<HeaderProps> = ({ onNavigate, activeView }) => {
               )}
             </div>
 
-            <button onClick={() => onNavigate('profile')} className="relative" aria-label="User Profile">
-              <img 
-                className={`h-9 w-9 rounded-full ring-2 ring-offset-2 ring-offset-dark-slate ${activeView === 'profile' ? 'ring-aqua-green' : 'ring-electric-blue'}`}
-                src="https://api.dicebear.com/8.x/bottts/svg?seed=skilllink-user" 
-                alt="User avatar" 
-              />
-               <span className="absolute bottom-0 right-0 block h-2.5 w-2.5 rounded-full bg-green-400 ring-2 ring-dark-slate" />
+            <button onClick={() => onNavigate('profile')} className="relative active:scale-95 flex items-center" aria-label="User Profile">
+              <div className="relative">
+                <img 
+                    className={`h-9 w-9 rounded-full ring-2 ring-offset-2 ring-offset-dark-slate ${activeView === 'profile' ? 'ring-aqua-green' : 'ring-electric-blue'}`}
+                    src="https://api.dicebear.com/8.x/bottts/svg?seed=skilllink-user" 
+                    alt="User avatar" 
+                />
+                <span className="absolute bottom-0 right-0 block h-2.5 w-2.5 rounded-full bg-green-400 ring-2 ring-dark-slate" />
+              </div>
+              {isPro && (
+                  <span className="ml-[-8px] mt-[20px] z-10 bg-gradient-to-r from-yellow-400 to-orange-500 text-black text-[10px] font-bold px-1.5 py-0.5 rounded-full border border-dark-slate shadow-sm">
+                      PRO
+                  </span>
+              )}
             </button>
           </div>
         </div>

@@ -82,22 +82,28 @@ export const Logo: React.FC<{ className?: string }> = ({ className }) => (
 
 export const PRO_FEATURES: ProFeature[] = [
   {
+    title: 'Verified Certificates',
+    description: 'Generate & download official certificates.',
+    longDescription: "Get access to our professional certificate generator. Create verifiable, signed certificates for your completed courses and workshops to showcase on LinkedIn and your resume.",
+    icon: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+  },
+  {
+    title: 'Unlimited AI Interviews',
+    description: 'Practice with AI avatars anytime.',
+    longDescription: "Master your interview skills with unlimited access to our AI Interview Coach. Choose from various technical topics, get real-time feedback on your tone and answers, and improve with every session.",
+    icon: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4z"></path><path d="M16 14c.83 0 1.5.67 1.5 1.5V19c0 .55-.45 1-1 1H7.5c-.55 0-1-.45-1-1v-3.5c0-.83.67-1.5 1.5-1.5H16z"></path></svg>
+  },
+  {
+    title: 'Unlimited ATS Scans',
+    description: 'Optimize your resume without limits.',
+    longDescription: "Ensure your resume never gets rejected by a bot. Run unlimited ATS scans against any job description to identify missing keywords, formatting issues, and get actionable tips to boost your match score.",
+    icon: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg>
+  },
+  {
     title: 'AI Course Recommender',
     description: 'Personalized course suggestions.',
-    longDescription: "Get hyper-personalized course suggestions from Gemini, tailored to your skills, interests, and career goals. Our AI analyzes your profile and learning patterns to recommend the most relevant content from top platforms, ensuring you're always on the fastest path to mastery.",
+    longDescription: "Get hyper-personalized course suggestions from Gemini, tailored to your skills, interests, and career goals. Our AI analyzes your profile and learning patterns to recommend the most relevant content.",
     icon: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-  },
-  {
-    title: 'Premium Workshops',
-    description: 'Exclusive access to expert-led events.',
-    longDescription: 'Gain exclusive access to live, interactive workshops led by industry pioneers from top tech companies. Dive deep into cutting-edge topics, get your questions answered in real-time, and network with experts who are shaping the future of AI and Web3.',
-    icon: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path></svg>
-  },
-  {
-    title: 'Referral Bonuses',
-    description: 'Earn credits for inviting friends.',
-    longDescription: "Grow the SkillLink community and get rewarded! Invite your friends to join, and when they book their first mentor session, you'll both receive credits. It's a win-win way to expand your network and accelerate your learning journey together.",
-    icon: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6"><path d="M20 12v10H4V12M2 7h20v5H2zM12 22V7M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"></path></svg>
   },
 ];
 
@@ -176,10 +182,10 @@ export const NAV_LINKS: NavLinkItem[] = [
     view: 'interview',
   },
   {
-    text: 'Challenges',
+    text: 'Resume Checker',
     href: '#',
-    icon: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg>,
-    isFeature: true,
+    icon: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg>,
+    view: 'ats',
   },
   {
     text: 'Mentors',
