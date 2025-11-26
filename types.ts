@@ -69,7 +69,7 @@ export interface NavLinkItem {
   href: string;
   icon: React.ReactNode;
   isFeature?: boolean;
-  view?: 'home' | 'tasks' | 'certificates';
+  view?: 'home' | 'tasks' | 'certificates' | 'interview';
 }
 
 export interface Task {
@@ -97,4 +97,11 @@ export interface Certificate {
   courseName: string;
   date: string;
   signatureImage: string; // Base64 string of the signature
+}
+
+export interface InterviewFeedback {
+  rating: number; // 1-10
+  feedback: string;
+  toneAnalysis: string;
+  suggestedImprovement: string;
 }

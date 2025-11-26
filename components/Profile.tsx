@@ -1,5 +1,4 @@
 
-
 import React, { useState, useMemo } from 'react';
 import UpgradeModal from './UpgradeModal';
 import { UserAchievement } from '../types';
@@ -127,7 +126,7 @@ const Profile: React.FC<ProfileProps> = ({ onBack, achievements }) => {
 
   return (
     <div className="animate-slide-in-fade max-w-4xl mx-auto">
-       <button onClick={onBack} className="mb-6 flex items-center text-sm font-medium text-muted-gray hover:text-white transition-colors">
+       <button onClick={onBack} className="mb-6 flex items-center text-sm font-medium text-muted-gray hover:text-white transition-all active:scale-95">
         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
         </svg>
@@ -151,10 +150,10 @@ const Profile: React.FC<ProfileProps> = ({ onBack, achievements }) => {
                     </div>
                 </div>
                 <div className="flex-grow flex justify-center sm:justify-end items-center gap-4 mt-4 sm:mt-0 w-full sm:w-auto">
-                    <button onClick={() => alert('Profile editing will be available soon!')} className="px-4 py-2 border border-electric-blue text-sm font-medium rounded-lg text-electric-blue hover:bg-electric-blue hover:text-white transition-colors">
+                    <button onClick={() => alert('Profile editing will be available soon!')} className="px-4 py-2 border border-electric-blue text-sm font-medium rounded-lg text-electric-blue hover:bg-electric-blue hover:text-white transition-all active:scale-95">
                         Edit Profile
                     </button>
-                     <button onClick={() => setIsUpgradeModalOpen(true)} className="px-6 py-2 bg-gradient-to-r from-aqua-green to-neon-purple text-sm font-bold text-white rounded-lg shadow-lg hover:scale-105 transition-transform">
+                     <button onClick={() => setIsUpgradeModalOpen(true)} className="px-6 py-2 bg-gradient-to-r from-aqua-green to-neon-purple text-sm font-bold text-white rounded-lg shadow-lg hover:scale-105 active:scale-95 transition-all">
                         Go Pro
                     </button>
                 </div>
@@ -218,7 +217,7 @@ const Profile: React.FC<ProfileProps> = ({ onBack, achievements }) => {
                 <nav className="-mb-px flex space-x-8" aria-label="Tabs">
                     <button
                         onClick={() => setActiveTab('payments')}
-                        className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                        className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-all active:scale-95 ${
                             activeTab === 'payments'
                             ? 'border-aqua-green text-aqua-green'
                             : 'border-transparent text-muted-gray hover:text-white hover:border-slate-500'
@@ -228,7 +227,7 @@ const Profile: React.FC<ProfileProps> = ({ onBack, achievements }) => {
                     </button>
                      <button
                         onClick={() => setActiveTab('challenges')}
-                        className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                        className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-all active:scale-95 ${
                             activeTab === 'challenges'
                             ? 'border-aqua-green text-aqua-green'
                             : 'border-transparent text-muted-gray hover:text-white hover:border-slate-500'
@@ -238,7 +237,7 @@ const Profile: React.FC<ProfileProps> = ({ onBack, achievements }) => {
                     </button>
                      <button
                         onClick={() => setActiveTab('referrals')}
-                        className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                        className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-all active:scale-95 ${
                             activeTab === 'referrals'
                             ? 'border-aqua-green text-aqua-green'
                             : 'border-transparent text-muted-gray hover:text-white hover:border-slate-500'
@@ -327,7 +326,7 @@ const Profile: React.FC<ProfileProps> = ({ onBack, achievements }) => {
                         </div>
                         <div className="bg-slate-800/40 border border-slate-700 p-4 rounded-lg flex items-center justify-between">
                             <p className="text-lg font-mono text-white tracking-widest">SKILL-LINK-A1B2</p>
-                            <button onClick={() => navigator.clipboard.writeText('SKILL-LINK-A1B2')} className="px-3 py-1.5 border border-electric-blue text-xs font-medium rounded-lg text-electric-blue hover:bg-electric-blue hover:text-white transition-colors">
+                            <button onClick={() => navigator.clipboard.writeText('SKILL-LINK-A1B2')} className="px-3 py-1.5 border border-electric-blue text-xs font-medium rounded-lg text-electric-blue hover:bg-electric-blue hover:text-white transition-all active:scale-95">
                                 Copy Code
                             </button>
                         </div>

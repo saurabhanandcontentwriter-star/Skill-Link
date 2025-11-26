@@ -49,7 +49,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ mentor, onClose }) => {
   };
 
   const BackButton = ({ onClick }: { onClick: () => void }) => (
-    <button onClick={onClick} className="absolute top-7 left-6 flex items-center text-sm font-medium text-muted-gray hover:text-white transition-colors z-10">
+    <button onClick={onClick} className="absolute top-7 left-6 flex items-center text-sm font-medium text-muted-gray hover:text-white transition-all active:scale-95 z-10">
         <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
         Back
     </button>
@@ -74,7 +74,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ mentor, onClose }) => {
                       <span className="font-mono text-lg text-white tracking-wider">{upiId}</span>
                       <button 
                           onClick={handleCopy}
-                          className="px-3 py-1.5 border border-electric-blue text-xs font-medium rounded-lg text-electric-blue hover:bg-electric-blue hover:text-white transition-colors"
+                          className="px-3 py-1.5 border border-electric-blue text-xs font-medium rounded-lg text-electric-blue hover:bg-electric-blue hover:text-white transition-all active:scale-95"
                       >
                           Copy
                       </button>
@@ -84,13 +84,13 @@ const BookingModal: React.FC<BookingModalProps> = ({ mentor, onClose }) => {
               <div className="mt-8 flex flex-col sm:flex-row gap-4">
                   <button
                       onClick={() => handlePaymentSuccess('UPI')}
-                      className="w-full px-4 py-3 font-bold text-white bg-gradient-to-r from-electric-blue to-neon-purple rounded-lg shadow-lg hover:shadow-xl hover:shadow-electric-blue/40 transition-all duration-300 transform hover:-translate-y-1"
+                      className="w-full px-4 py-3 font-bold text-white bg-gradient-to-r from-electric-blue to-neon-purple rounded-lg shadow-lg hover:shadow-xl hover:shadow-electric-blue/40 transition-all duration-300 transform hover:-translate-y-1 active:scale-95"
                   >
                       Open UPI App & Pay
                   </button>
                   <button
                       onClick={onClose}
-                      className="w-full px-4 py-3 font-bold text-muted-gray bg-slate-700/50 rounded-lg hover:bg-slate-700 hover:text-white transition-colors"
+                      className="w-full px-4 py-3 font-bold text-muted-gray bg-slate-700/50 rounded-lg hover:bg-slate-700 hover:text-white transition-all active:scale-95"
                   >
                       Cancel
                   </button>
@@ -113,13 +113,13 @@ const BookingModal: React.FC<BookingModalProps> = ({ mentor, onClose }) => {
                     <input type="text" name="cvc" value={cardDetails.cvc} onChange={handleCardChange} placeholder="CVC" required className="w-full px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-600 text-white focus:ring-2 focus:ring-electric-blue focus:outline-none transition" />
                 </div>
                 <input type="text" name="name" value={cardDetails.name} onChange={handleCardChange} placeholder="Name on Card" required className="w-full px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-600 text-white focus:ring-2 focus:ring-electric-blue focus:outline-none transition" />
-                <button type="submit" className="w-full text-center px-4 py-3 font-bold text-white bg-gradient-to-r from-aqua-green to-neon-purple rounded-lg shadow-lg hover:shadow-xl hover:shadow-neon-purple/40 transition-all duration-300 transform hover:-translate-y-1">
+                <button type="submit" className="w-full text-center px-4 py-3 font-bold text-white bg-gradient-to-r from-aqua-green to-neon-purple rounded-lg shadow-lg hover:shadow-xl hover:shadow-neon-purple/40 transition-all duration-300 transform hover:-translate-y-1 active:scale-95">
                     Pay INR {mentor.sessionPrice.toLocaleString('en-IN')}
                 </button>
                  <button
                       type="button"
                       onClick={onClose}
-                      className="w-full px-4 py-3 font-bold text-muted-gray bg-slate-700/50 rounded-lg hover:bg-slate-700 hover:text-white transition-colors"
+                      className="w-full px-4 py-3 font-bold text-muted-gray bg-slate-700/50 rounded-lg hover:bg-slate-700 hover:text-white transition-all active:scale-95"
                   >
                       Cancel
                   </button>
@@ -135,14 +135,14 @@ const BookingModal: React.FC<BookingModalProps> = ({ mentor, onClose }) => {
             <div className="space-y-4 mt-8">
                 <button
                     onClick={() => setView('upi')}
-                    className="w-full flex items-center justify-center gap-3 text-left p-4 bg-slate-700/50 rounded-lg hover:bg-slate-700 transition-colors"
+                    className="w-full flex items-center justify-center gap-3 text-left p-4 bg-slate-700/50 rounded-lg hover:bg-slate-700 transition-all active:scale-95"
                 >
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6 text-electric-blue"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
                     <span className="font-semibold text-white">Pay with UPI</span>
                 </button>
                 <button
                     onClick={() => setView('card')}
-                    className="w-full flex items-center justify-center gap-3 text-left p-4 bg-slate-700/50 rounded-lg hover:bg-slate-700 transition-colors"
+                    className="w-full flex items-center justify-center gap-3 text-left p-4 bg-slate-700/50 rounded-lg hover:bg-slate-700 transition-all active:scale-95"
                 >
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6 text-aqua-green"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
                     <span className="font-semibold text-white">Credit / Debit Card</span>
@@ -150,7 +150,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ mentor, onClose }) => {
             </div>
              <button
                 onClick={onClose}
-                className="w-full mt-6 px-4 py-3 font-bold text-muted-gray bg-transparent rounded-lg hover:bg-slate-700/50 hover:text-white transition-colors"
+                className="w-full mt-6 px-4 py-3 font-bold text-muted-gray bg-transparent rounded-lg hover:bg-slate-700/50 hover:text-white transition-all active:scale-95"
             >
                 Cancel Booking
             </button>

@@ -170,6 +170,12 @@ export const NAV_LINKS: NavLinkItem[] = [
     view: 'certificates',
   },
   {
+    text: 'Interview',
+    href: '#',
+    icon: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4z"></path><path d="M16 14c.83 0 1.5.67 1.5 1.5V19c0 .55-.45 1-1 1H7.5c-.55 0-1-.45-1-1v-3.5c0-.83.67-1.5 1.5-1.5H16z"></path><path d="M20 21v-2a4 4 0 0 0-3-3.87"></path><path d="M4 21v-2a4 4 0 0 1 3-3.87"></path></svg>,
+    view: 'interview',
+  },
+  {
     text: 'Challenges',
     href: '#',
     icon: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg>,

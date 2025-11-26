@@ -100,6 +100,7 @@ const Header: React.FC<HeaderProps> = ({ onNavigate, activeView }) => {
     if (activeView === 'home') return 'Home';
     if (activeView === 'tasks') return 'Tasks';
     if (activeView === 'certificates') return 'Certificates';
+    if (activeView === 'interview') return 'Interview';
     return '';
   };
 

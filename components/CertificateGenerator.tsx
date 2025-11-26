@@ -296,7 +296,8 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({ onBack }) =
     try {
         const dateObj = new Date(`${date}T${time || '00:00'}`);
         if (isNaN(dateObj.getTime())) return date;
-        return dateObj.toLocaleDateString(undefined, { 
+        // Use toLocaleString to ensure time is included
+        return dateObj.toLocaleString(undefined, { 
             year: 'numeric', 
             month: 'long', 
             day: 'numeric',
@@ -422,7 +423,7 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({ onBack }) =
              <div className="flex justify-between items-end px-4 sm:px-12 pb-4 relative">
                  <div className="text-center z-10">
                      <p className="text-lg font-bold text-[#451a03] border-t-2 border-[#854d0e] pt-2 px-6">{dDate}</p>
-                     <p className="text-xs uppercase tracking-widest text-[#92400e] mt-1">Date Awarded</p>
+                     <p className="text-xs uppercase tracking-widest text-[#92400e] mt-1">Date & Time</p>
                  </div>
                  
                  {/* Gold Seal Effect */}
@@ -479,7 +480,7 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({ onBack }) =
              <div className="ml-6 sm:ml-10 flex gap-12 sm:gap-24 items-end mt-auto">
                  <div>
                      <p className="text-lg font-mono text-slate-900">{dDate}</p>
-                     <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mt-2">Date</p>
+                     <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mt-2">Date & Time</p>
                  </div>
                  <div>
                     <div className="h-12 flex items-end mb-2">
@@ -535,7 +536,7 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({ onBack }) =
 
                 <div className="mt-auto flex justify-between items-end border-t border-slate-100 pt-6">
                     <div>
-                        <p className="text-xs text-slate-400 uppercase font-bold tracking-wider mb-1">Date</p>
+                        <p className="text-xs text-slate-400 uppercase font-bold tracking-wider mb-1">Date & Time</p>
                         <p className="text-lg font-semibold text-slate-700">{dDate}</p>
                     </div>
                     <div className="text-right">
@@ -553,7 +554,7 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({ onBack }) =
 
   return (
     <div className="animate-slide-in-fade max-w-6xl mx-auto">
-      <button onClick={onBack} className="mb-6 flex items-center text-sm font-medium text-muted-gray hover:text-white transition-colors">
+      <button onClick={onBack} className="mb-6 flex items-center text-sm font-medium text-muted-gray hover:text-white transition-all active:scale-95">
         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
         </svg>
         Back to Dashboard
@@ -582,7 +583,7 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({ onBack }) =
                       <button
                         key={template}
                         onClick={() => setSelectedTemplate(template as TemplateType)}
-                        className={`px-3 py-2 rounded-lg text-sm font-medium capitalize transition-all border-2 ${
+                        className={`px-3 py-2 rounded-lg text-sm font-medium capitalize transition-all active:scale-95 border-2 ${
                           selectedTemplate === template
                             ? 'bg-electric-blue/20 border-electric-blue text-white'
                             : 'bg-slate-800 border-slate-700 text-muted-gray hover:border-slate-500'
@@ -641,19 +642,19 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({ onBack }) =
                     <div className="flex bg-slate-800 p-1 rounded-lg border border-slate-700">
                         <button
                             onClick={() => { setSignatureMode('draw'); setValidationError(null); }}
-                            className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${signatureMode === 'draw' ? 'bg-electric-blue text-white shadow-sm' : 'text-muted-gray hover:text-white'}`}
+                            className={`px-3 py-1 text-xs font-medium rounded-md transition-all active:scale-95 ${signatureMode === 'draw' ? 'bg-electric-blue text-white shadow-sm' : 'text-muted-gray hover:text-white'}`}
                         >
                             Draw
                         </button>
                         <button
                              onClick={() => { setSignatureMode('type'); setValidationError(null); }}
-                             className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${signatureMode === 'type' ? 'bg-electric-blue text-white shadow-sm' : 'text-muted-gray hover:text-white'}`}
+                             className={`px-3 py-1 text-xs font-medium rounded-md transition-all active:scale-95 ${signatureMode === 'type' ? 'bg-electric-blue text-white shadow-sm' : 'text-muted-gray hover:text-white'}`}
                         >
                             Type
                         </button>
                          <button
                              onClick={() => { setSignatureMode('voice'); setValidationError(null); }}
-                             className={`px-3 py-1 text-xs font-medium rounded-md transition-all flex items-center gap-1 ${signatureMode === 'voice' ? 'bg-electric-blue text-white shadow-sm' : 'text-muted-gray hover:text-white'}`}
+                             className={`px-3 py-1 text-xs font-medium rounded-md transition-all active:scale-95 flex items-center gap-1 ${signatureMode === 'voice' ? 'bg-electric-blue text-white shadow-sm' : 'text-muted-gray hover:text-white'}`}
                         >
                             Voice
                         </button>
@@ -712,7 +713,7 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({ onBack }) =
                                     <button
                                         key={font.name}
                                         onClick={() => setSelectedFont(font.name)}
-                                        className={`px-2 py-3 rounded border text-center transition-all ${
+                                        className={`px-2 py-3 rounded border text-center transition-all active:scale-95 ${
                                             selectedFont === font.name 
                                             ? 'bg-white text-black border-electric-blue ring-2 ring-electric-blue/30' 
                                             : 'bg-slate-900 text-muted-gray border-slate-600 hover:border-slate-400'
@@ -733,7 +734,7 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({ onBack }) =
                             <button
                                 onClick={startListening}
                                 disabled={isListening}
-                                className={`p-6 rounded-full transition-all transform hover:scale-105 ${
+                                className={`p-6 rounded-full transition-all active:scale-95 transform hover:scale-105 ${
                                     isListening 
                                     ? 'bg-red-500/20 text-red-500 ring-4 ring-red-500/20 animate-pulse' 
                                     : 'bg-electric-blue/20 text-electric-blue hover:bg-electric-blue hover:text-white'
@@ -764,7 +765,7 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({ onBack }) =
                                             <button
                                                 key={font.name}
                                                 onClick={() => setSelectedFont(font.name)}
-                                                className={`px-2 py-3 rounded border text-center transition-all ${
+                                                className={`px-2 py-3 rounded border text-center transition-all active:scale-95 ${
                                                     selectedFont === font.name 
                                                     ? 'bg-white text-black border-electric-blue ring-2 ring-electric-blue/30' 
                                                     : 'bg-slate-900 text-muted-gray border-slate-600 hover:border-slate-400'
@@ -794,7 +795,7 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({ onBack }) =
                    </div>
                   <button 
                     onClick={clearSignature}
-                    className="px-3 py-1.5 text-xs font-semibold text-red-400 bg-red-400/10 border border-red-400/20 rounded-lg hover:bg-red-400/20 hover:text-red-300 transition-colors"
+                    className="px-3 py-1.5 text-xs font-semibold text-red-400 bg-red-400/10 border border-red-400/20 rounded-lg hover:bg-red-400/20 hover:text-red-300 transition-all active:scale-95"
                   >
                     Clear Signature
                   </button>
@@ -804,7 +805,7 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({ onBack }) =
               <button
                 onClick={handleGenerate}
                 disabled={!hasSignature || !!validationError}
-                className="w-full mt-4 px-6 py-4 font-semibold rounded-lg text-white bg-gradient-to-r from-electric-blue to-neon-purple shadow-lg transition-all duration-300 transform hover:-translate-y-1 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                className="w-full mt-4 px-6 py-4 font-semibold rounded-lg text-white bg-gradient-to-r from-electric-blue to-neon-purple shadow-lg transition-all duration-300 transform hover:-translate-y-1 active:scale-95 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
               >
                 Generate Final Certificate
               </button>
@@ -842,14 +843,14 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({ onBack }) =
                       setGeneratedCertificate(null);
                       // Don't clear signature state so they can edit easily
                   }}
-                  className="px-6 py-2.5 font-medium text-muted-gray bg-slate-800 rounded-lg hover:bg-slate-700 hover:text-white transition-colors"
+                  className="px-6 py-2.5 font-medium text-muted-gray bg-slate-800 rounded-lg hover:bg-slate-700 hover:text-white transition-all active:scale-95"
                >
                   Edit Details
                </button>
                <button
                   onClick={handleDownload}
                   disabled={isDownloading}
-                  className={`px-6 py-2.5 font-bold text-white bg-green-600 rounded-lg shadow-lg transition-all transform ${isDownloading ? 'opacity-75 cursor-wait' : 'hover:bg-green-700 hover:-translate-y-1'}`}
+                  className={`px-6 py-2.5 font-bold text-white bg-green-600 rounded-lg shadow-lg transition-all transform active:scale-95 ${isDownloading ? 'opacity-75 cursor-wait' : 'hover:bg-green-700 hover:-translate-y-1'}`}
                >
                   {isDownloading ? (
                     <span className="flex items-center">

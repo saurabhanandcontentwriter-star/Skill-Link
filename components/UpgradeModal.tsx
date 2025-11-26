@@ -1,5 +1,4 @@
 
-
 import React, { useEffect, useState } from 'react';
 import { PRO_FEATURES } from '../constants';
 
@@ -61,7 +60,7 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({ onClose }) => {
     );
     
     const BackButton = ({ onClick }: { onClick: () => void }) => (
-        <button onClick={onClick} className="absolute top-7 left-6 flex items-center text-sm font-medium text-muted-gray hover:text-white transition-colors">
+        <button onClick={onClick} className="absolute top-7 left-6 flex items-center text-sm font-medium text-muted-gray hover:text-white transition-all active:scale-95">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
             Back
         </button>
@@ -78,14 +77,14 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({ onClose }) => {
                             <div className="space-y-4 pt-8">
                                 <button
                                     onClick={() => setView('card')}
-                                    className="w-full flex items-center justify-center gap-3 text-left p-4 bg-slate-700/50 rounded-lg hover:bg-slate-700 transition-colors"
+                                    className="w-full flex items-center justify-center gap-3 text-left p-4 bg-slate-700/50 rounded-lg hover:bg-slate-700 transition-all active:scale-95"
                                 >
                                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6 text-aqua-green"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
                                     <span className="font-semibold text-white">Credit / Debit Card</span>
                                 </button>
                                 <button
                                     onClick={() => setView('crypto')}
-                                    className="w-full flex items-center justify-center gap-3 text-left p-4 bg-slate-700/50 rounded-lg hover:bg-slate-700 transition-colors"
+                                    className="w-full flex items-center justify-center gap-3 text-left p-4 bg-slate-700/50 rounded-lg hover:bg-slate-700 transition-all active:scale-95"
                                 >
                                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6 text-neon-purple"><path d="M10.333 8.002h3.334C15.533 8 16 8.467 16 10v4c0 1.533-.467 2-2.333 2h-3.334C8.467 16 8 15.533 8 14v-4c0-1.533.467-2 2.333-2z"/><path d="M12 8V7M12 17v-1M14.5 5.5l.707-.707M6.8 17.2l.707-.707M17.2 17.2l-.707-.707M5.5 5.5l.707.707M2 12h1M21 12h-1"/></svg>
                                     <span className="font-semibold text-white">Cryptocurrency (NOWPayments)</span>
@@ -110,7 +109,7 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({ onClose }) => {
                                     <input type="text" name="cvc" value={cardDetails.cvc} onChange={handleCardChange} placeholder="CVC" required className="w-full px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-600 text-white focus:ring-2 focus:ring-electric-blue focus:outline-none transition" />
                                 </div>
                                 <input type="text" name="name" value={cardDetails.name} onChange={handleCardChange} placeholder="Name on Card" required className="w-full px-4 py-2.5 rounded-lg bg-slate-900 border border-slate-600 text-white focus:ring-2 focus:ring-electric-blue focus:outline-none transition" />
-                                <button type="submit" className="w-full text-center px-4 py-3 font-bold text-white bg-gradient-to-r from-aqua-green to-neon-purple rounded-lg shadow-lg hover:shadow-xl hover:shadow-neon-purple/40 transition-all duration-300 transform hover:-translate-y-1">
+                                <button type="submit" className="w-full text-center px-4 py-3 font-bold text-white bg-gradient-to-r from-aqua-green to-neon-purple rounded-lg shadow-lg hover:shadow-xl hover:shadow-neon-purple/40 transition-all duration-300 transform hover:-translate-y-1 active:scale-95">
                                     Pay INR 999
                                 </button>
                             </form>
@@ -129,11 +128,11 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({ onClose }) => {
                             </div>
                             <div className="mt-4 flex items-center justify-between p-2 rounded-lg border border-slate-600 bg-slate-900">
                                 <span className="font-mono text-xs sm:text-sm text-white truncate">0x1234567890abcdef1234567890abcdef12345678</span>
-                                <button onClick={() => navigator.clipboard.writeText('0x1234567890abcdef1234567890abcdef12345678')} className="px-3 py-1.5 border border-electric-blue text-xs font-medium rounded-lg text-electric-blue hover:bg-electric-blue hover:text-white transition-colors">
+                                <button onClick={() => navigator.clipboard.writeText('0x1234567890abcdef1234567890abcdef12345678')} className="px-3 py-1.5 border border-electric-blue text-xs font-medium rounded-lg text-electric-blue hover:bg-electric-blue hover:text-white transition-all active:scale-95">
                                     Copy
                                 </button>
                             </div>
-                            <button onClick={() => handlePaymentSuccess('crypto')} className="mt-6 w-full text-center px-4 py-3 font-bold text-white bg-gradient-to-r from-aqua-green to-neon-purple rounded-lg shadow-lg hover:shadow-xl hover:shadow-neon-purple/40 transition-all duration-300 transform hover:-translate-y-1">
+                            <button onClick={() => handlePaymentSuccess('crypto')} className="mt-6 w-full text-center px-4 py-3 font-bold text-white bg-gradient-to-r from-aqua-green to-neon-purple rounded-lg shadow-lg hover:shadow-xl hover:shadow-neon-purple/40 transition-all duration-300 transform hover:-translate-y-1 active:scale-95">
                                 I Have Paid
                             </button>
                         </div>
@@ -164,13 +163,13 @@ const UpgradeModal: React.FC<UpgradeModalProps> = ({ onClose }) => {
                         <div className="mt-8 flex flex-col sm:flex-row gap-4">
                             <button
                                 onClick={() => setView('payment_options')}
-                                className="w-full text-center px-4 py-3 font-bold text-white bg-gradient-to-r from-aqua-green to-neon-purple rounded-lg shadow-lg hover:shadow-xl hover:shadow-neon-purple/40 transition-all duration-300 transform hover:-translate-y-1"
+                                className="w-full text-center px-4 py-3 font-bold text-white bg-gradient-to-r from-aqua-green to-neon-purple rounded-lg shadow-lg hover:shadow-xl hover:shadow-neon-purple/40 transition-all duration-300 transform hover:-translate-y-1 active:scale-95"
                             >
                                 Upgrade for INR 999/month
                             </button>
                             <button
                                 onClick={onClose}
-                                className="w-full px-4 py-3 font-bold text-muted-gray bg-slate-700/50 rounded-lg hover:bg-slate-700 hover:text-white transition-colors"
+                                className="w-full px-4 py-3 font-bold text-muted-gray bg-slate-700/50 rounded-lg hover:bg-slate-700 hover:text-white transition-all active:scale-95"
                             >
                                 Maybe Later
                             </button>

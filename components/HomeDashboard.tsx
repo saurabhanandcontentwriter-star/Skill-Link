@@ -1,5 +1,4 @@
 
-
 import React, { useState, useEffect } from 'react';
 import { MENTORS, WORKSHOPS, COURSES, PRO_FEATURES, TASKS } from '../constants';
 import MentorCard from './MentorCard';
@@ -121,7 +120,7 @@ const HomeDashboard: React.FC<HomeDashboardProps> = ({ onSelectMentor, onSelectW
                     <button 
                         key={workshop.title} 
                         onClick={() => onSelectWorkshop(workshop)}
-                        className={`w-full p-4 flex justify-between items-center text-left transition-colors duration-200 rounded-lg hover:bg-slate-800/60 ${index < WORKSHOPS.length - 1 ? 'border-b border-slate-800' : ''}`}
+                        className={`w-full p-4 flex justify-between items-center text-left transition-all duration-200 rounded-lg hover:bg-slate-800/60 active:scale-[0.99] ${index < WORKSHOPS.length - 1 ? 'border-b border-slate-800' : ''}`}
                     >
                         <div className="flex-grow">
                             <div className="flex items-center gap-2 mb-1">
@@ -159,7 +158,7 @@ const HomeDashboard: React.FC<HomeDashboardProps> = ({ onSelectMentor, onSelectW
               <div 
                 key={feature.title}
                 onClick={() => handleSelectProFeature(feature)}
-                className="bg-slate-800/50 p-4 rounded-lg flex items-center gap-4 cursor-pointer transition-all duration-300 hover:bg-slate-800 hover:shadow-lg hover:shadow-aqua-green/20 hover:-translate-y-1 border border-transparent hover:border-aqua-green"
+                className="bg-slate-800/50 p-4 rounded-lg flex items-center gap-4 cursor-pointer transition-all duration-300 hover:bg-slate-800 hover:shadow-lg hover:shadow-aqua-green/20 hover:-translate-y-1 border border-transparent hover:border-aqua-green active:scale-95"
               >
                 <div className="flex-shrink-0 h-12 w-12 flex items-center justify-center rounded-full bg-aqua-green/20 text-aqua-green">
                     {feature.icon}
@@ -171,7 +170,7 @@ const HomeDashboard: React.FC<HomeDashboardProps> = ({ onSelectMentor, onSelectW
               </div>
             ))}
         </div>
-        <button onClick={() => setIsUpgradeModalOpen(true)} className="mt-8 px-8 py-3 bg-gradient-to-r from-aqua-green to-neon-purple text-white font-bold rounded-lg shadow-lg transform hover:scale-105 transition-all ring-1 ring-offset-2 ring-offset-dark-slate ring-aqua-green/70 hover:ring-aqua-green focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-aqua-green">
+        <button onClick={() => setIsUpgradeModalOpen(true)} className="mt-8 px-8 py-3 bg-gradient-to-r from-aqua-green to-neon-purple text-white font-bold rounded-lg shadow-lg transform hover:scale-105 active:scale-95 transition-all ring-1 ring-offset-2 ring-offset-dark-slate ring-aqua-green/70 hover:ring-aqua-green focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-aqua-green">
             Upgrade Now
         </button>
       </section>
@@ -182,7 +181,7 @@ const HomeDashboard: React.FC<HomeDashboardProps> = ({ onSelectMentor, onSelectW
         <p className="text-white mt-2 max-w-xl mx-auto">Join our weekly coding and design challenges to win prizes and showcase your talent.</p>
         <button 
             onClick={() => setIsChallengeModalOpen(true)} 
-            className="mt-6 px-8 py-3 bg-white text-dark-slate font-bold rounded-xl border-2 border-black ring-2 ring-white transition-all duration-300 transform hover:-translate-y-1 hover:shadow-2xl hover:shadow-white/30"
+            className="mt-6 px-8 py-3 bg-white text-dark-slate font-bold rounded-xl border-2 border-black ring-2 ring-white transition-all duration-300 transform hover:-translate-y-1 active:scale-95 hover:shadow-2xl hover:shadow-white/30"
         >
             Join a Challenge
         </button>

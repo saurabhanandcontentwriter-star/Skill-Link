@@ -1,4 +1,5 @@
 
+
 import React, { useState } from 'react';
 import Header from './components/Header';
 import Footer from './components/Footer';
@@ -11,10 +12,11 @@ import Profile from './components/Profile';
 import Chatbot from './components/Chatbot';
 import TasksDashboard from './components/TasksDashboard';
 import CertificateGenerator from './components/CertificateGenerator';
+import AiInterview from './components/AiInterview';
 import { Mentor, Workshop, UserAchievement, Badge } from './types';
 import { USER_ACHIEVEMENTS } from './constants';
 
-export type ActiveView = 'home' | 'mentor' | 'workshop' | 'profile' | 'tasks' | 'certificates';
+export type ActiveView = 'home' | 'mentor' | 'workshop' | 'profile' | 'tasks' | 'certificates' | 'interview';
 
 const App: React.FC = () => {
   const [isOnboarded, setIsOnboarded] = useState(false);
@@ -98,6 +100,8 @@ const App: React.FC = () => {
                 />;
       case 'certificates':
         return <CertificateGenerator onBack={() => handleNavigate('home')} />;
+      case 'interview':
+        return <AiInterview onBack={() => handleNavigate('home')} />;
       case 'home':
       default:
         return <HomeDashboard onSelectMentor={handleSelectMentor} onSelectWorkshop={handleSelectWorkshop} />;

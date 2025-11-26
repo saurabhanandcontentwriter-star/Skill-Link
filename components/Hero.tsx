@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback } from 'react';
 import { getGroundedAnswer } from '../services/geminiService';
 import { GroundedResponse } from '../types';
@@ -58,7 +59,7 @@ const Hero: React.FC = () => {
           <button
             type="submit"
             disabled={isLoading}
-            className="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-semibold rounded-lg shadow-lg text-white bg-gradient-to-r from-electric-blue to-neon-purple transition-all duration-300 transform hover:-translate-y-1 focus:outline-none focus:ring-4 focus:ring-offset-2 focus:ring-offset-dark-slate focus:ring-electric-blue disabled:opacity-50 disabled:cursor-not-allowed"
+            className="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-semibold rounded-lg shadow-lg text-white bg-gradient-to-r from-electric-blue to-neon-purple transition-all duration-300 transform hover:-translate-y-1 active:scale-95 focus:outline-none focus:ring-4 focus:ring-offset-2 focus:ring-offset-dark-slate focus:ring-electric-blue disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isLoading ? (
               <>
@@ -82,7 +83,7 @@ const Hero: React.FC = () => {
                 key={p}
                 type="button"
                 onClick={() => handleExampleClick(p)}
-                className="px-3 py-1 bg-slate-800/60 text-muted-gray rounded-full border border-slate-700 hover:bg-slate-700/80 hover:text-white hover:border-aqua-green/70 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-dark-slate focus:ring-aqua-green"
+                className="px-3 py-1 bg-slate-800/60 text-muted-gray rounded-full border border-slate-700 hover:bg-slate-700/80 hover:text-white hover:border-aqua-green/70 transition-all duration-200 active:scale-95 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-dark-slate focus:ring-aqua-green"
             >
                 {p}
             </button>

@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Logo } from '../constants';
 
@@ -24,14 +25,14 @@ const Onboarding: React.FC<{onComplete: () => void}> = ({ onComplete }) => {
         <div className="space-y-4">
           <button 
             onClick={onComplete}
-            className="w-full text-lg font-semibold text-white px-8 py-4 rounded-lg bg-gradient-to-r from-electric-blue to-neon-purple shadow-lg hover:shadow-xl hover:shadow-electric-blue/40 transition-all duration-300 transform hover:-translate-y-1 focus:outline-none focus:ring-4 focus:ring-offset-2 focus:ring-offset-dark-slate focus:ring-electric-blue"
+            className="w-full text-lg font-semibold text-white px-8 py-4 rounded-lg bg-gradient-to-r from-electric-blue to-neon-purple shadow-lg hover:shadow-xl hover:shadow-electric-blue/40 transition-all duration-300 transform hover:-translate-y-1 active:scale-95 focus:outline-none focus:ring-4 focus:ring-offset-2 focus:ring-offset-dark-slate focus:ring-electric-blue"
             aria-label="Login with Gmail"
           >
             Login with Gmail
           </button>
           <button 
             onClick={onComplete}
-            className="w-full text-lg font-semibold text-white px-8 py-4 rounded-lg bg-gradient-to-r from-electric-blue to-neon-purple shadow-lg hover:shadow-xl hover:shadow-neon-purple/40 transition-all duration-300 transform hover:-translate-y-1 focus:outline-none focus:ring-4 focus:ring-offset-2 focus:ring-offset-dark-slate focus:ring-neon-purple"
+            className="w-full text-lg font-semibold text-white px-8 py-4 rounded-lg bg-gradient-to-r from-electric-blue to-neon-purple shadow-lg hover:shadow-xl hover:shadow-neon-purple/40 transition-all duration-300 transform hover:-translate-y-1 active:scale-95 focus:outline-none focus:ring-4 focus:ring-offset-2 focus:ring-offset-dark-slate focus:ring-neon-purple"
             aria-label="Sign Up for free"
           >
             Sign Up (Free)

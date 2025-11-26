@@ -1,3 +1,4 @@
+
 import React, { useState, FormEvent, useMemo } from 'react';
 import { TASKS, BADGES, ACHIEVEMENT_CRITERIA } from '../constants';
 import { Task, Badge, UserAchievement } from '../types';
@@ -64,7 +65,7 @@ const TaskItem: React.FC<{
       </div>
       <button
         onClick={() => onDelete(task.id)}
-        className="text-muted-gray/50 opacity-0 group-hover:opacity-100 hover:text-red-500 transition-opacity ml-2"
+        className="text-muted-gray/50 opacity-0 group-hover:opacity-100 hover:text-red-500 transition-all active:scale-90 ml-2"
         aria-label={`Delete task: ${task.text}`}
       >
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
@@ -161,7 +162,7 @@ const TasksDashboard: React.FC<TasksDashboardProps> = ({ onBack, onAwardBadge })
 
   return (
     <div className="animate-slide-in-fade max-w-3xl mx-auto">
-      <button onClick={onBack} className="mb-6 flex items-center text-sm font-medium text-muted-gray hover:text-white transition-colors">
+      <button onClick={onBack} className="mb-6 flex items-center text-sm font-medium text-muted-gray hover:text-white transition-all active:scale-95">
         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
         Back to Dashboard
       </button>
@@ -207,7 +208,7 @@ const TasksDashboard: React.FC<TasksDashboardProps> = ({ onBack, onAwardBadge })
           />
           <button
             type="submit"
-            className="flex-shrink-0 px-6 py-3 font-semibold rounded-lg text-white bg-gradient-to-r from-electric-blue to-neon-purple transition-all duration-300 transform hover:-translate-y-1 focus:outline-none focus:ring-4 focus:ring-offset-2 focus:ring-offset-dark-slate focus:ring-electric-blue disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex-shrink-0 px-6 py-3 font-semibold rounded-lg text-white bg-gradient-to-r from-electric-blue to-neon-purple transition-all duration-300 transform hover:-translate-y-1 active:scale-95 focus:outline-none focus:ring-4 focus:ring-offset-2 focus:ring-offset-dark-slate focus:ring-electric-blue disabled:opacity-50 disabled:cursor-not-allowed"
             disabled={!newTaskText.trim()}
           >
             Add Task

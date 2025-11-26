@@ -1,5 +1,4 @@
 
-
 import React, { useState } from 'react';
 import type { Mentor } from '../types';
 import StarRating from './StarRating';
@@ -28,7 +27,7 @@ const MentorCard: React.FC<MentorCardProps> = ({ mentor, onSelect }) => {
     <>
       <div 
         onClick={() => onSelect(mentor)}
-        className="cursor-pointer group relative rounded-xl p-5 text-center transition-all duration-300 shadow-lg hover:shadow-electric-blue/20 hover:-translate-y-2 flex flex-col h-full border border-transparent [background:linear-gradient(theme(colors.slate.800),theme(colors.slate.800))_padding-box,linear-gradient(135deg,theme(colors.neon-purple),theme(colors.electric-blue))_border-box]"
+        className="cursor-pointer group relative rounded-xl p-5 text-center transition-all duration-300 shadow-lg hover:shadow-electric-blue/20 hover:-translate-y-2 flex flex-col h-full border border-transparent [background:linear-gradient(theme(colors.slate.800),theme(colors.slate.800))_padding-box,linear-gradient(135deg,theme(colors.neon-purple),theme(colors.electric-blue))_border-box] active:scale-[0.98]"
       >
         <div className="relative z-10 flex flex-col flex-grow">
           <img className="mx-auto h-20 w-20 rounded-full" src={mentor.avatarUrl} alt={mentor.name} />
@@ -57,14 +56,14 @@ const MentorCard: React.FC<MentorCardProps> = ({ mentor, onSelect }) => {
               <div className="flex items-center gap-3">
                   <button 
                       onClick={handleBooking}
-                      className="w-full px-4 py-2.5 font-bold text-white bg-gradient-to-r from-electric-blue to-neon-purple rounded-lg shadow-lg hover:shadow-xl hover:shadow-electric-blue/40 transition-all duration-300 transform hover:-translate-y-1"
+                      className="w-full px-4 py-2.5 font-bold text-white bg-gradient-to-r from-electric-blue to-neon-purple rounded-lg shadow-lg hover:shadow-xl hover:shadow-electric-blue/40 transition-all duration-300 transform hover:-translate-y-1 active:scale-95"
                   >
                       Book Session
                   </button>
                   <button
                       onClick={handleMessage}
                       aria-label={`Message ${mentor.name}`}
-                      className="flex-shrink-0 p-3 bg-slate-700/50 rounded-lg text-muted-gray hover:bg-slate-700 hover:text-white transition-colors"
+                      className="flex-shrink-0 p-3 bg-slate-700/50 rounded-lg text-muted-gray hover:bg-slate-700 hover:text-white transition-all active:scale-90"
                   >
                       <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
                   </button>

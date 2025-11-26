@@ -1,8 +1,6 @@
 
-
-
 import { GoogleGenAI, Chat, Type } from "@google/genai";
-import type { GroundedResponse, GroundingSource, RecommendedCourse, Task } from '../types';
+import type { GroundedResponse, GroundingSource, RecommendedCourse, Task, InterviewFeedback } from '../types';
 
 let ai: GoogleGenAI | null = null;
 
@@ -128,4 +126,82 @@ export const startChatSession = (systemInstruction?: string): Chat => {
     },
   });
   return chat;
+};
+
+
+// --- Interview Features ---
+
+export const getInterviewerIntro = async (name: string, gender: string, topic: string): Promise<string> => {
+  if (!ai) throw new Error("AI service not configured.");
+
+  const prompt = `Act as an Indian technical interviewer named ${name} (${gender}). 
+  You are conducting an interview for the topic: "${topic}".
+  
+  Generate a short, professional, and warm opening greeting in Indian English (e.g., use "Namaste" or "Hello", be polite). 
+  Introduce yourself briefly and ask the candidate to introduce themselves. 
+  Keep it under 3 sentences.`;
+
+  const response = await ai.models.generateContent({
+    model: "gemini-2.5-flash",
+    contents: prompt,
+  });
+
+  return response.text.trim();
+}
+
+export const getInterviewQuestion = async (topic: string, difficulty: string, previousContext?: string): Promise<string> => {
+  if (!ai) throw new Error("AI service not configured.");
+
+  const context = previousContext ? `Context: ${previousContext}` : "This is the first question.";
+  
+  const prompt = `Act as an Indian technical interviewer. The topic is: "${topic}" at a "${difficulty}" level.
+  ${context}
+  
+  Generate ONE single, clear interview question relevant to this topic and difficulty. 
+  If the context implies the user just introduced themselves, acknowledge it briefly and politely (e.g., "Thanks for sharing...") before asking the technical question.
+  Do not add long filler text. Just the acknowledgement (if needed) and the question.`;
+
+  const response = await ai.models.generateContent({
+    model: "gemini-2.5-flash",
+    contents: prompt,
+  });
+
+  return response.text.trim();
+};
+
+export const evaluateInterviewResponse = async (question: string, answer: string): Promise<InterviewFeedback> => {
+  if (!ai) throw new Error("AI service not configured.");
+
+  const prompt = `You are an expert interviewer evaluating a candidate's response.
+  Question: "${question}"
+  Candidate Answer: "${answer}"
+
+  Analyze the answer for technical correctness, clarity, and voice tone (inferred from text).
+  Provide:
+  1. A rating from 1-10.
+  2. Brief feedback/remarks on the content.
+  3. Tone analysis (e.g., confident, hesitant, vague, precise).
+  4. A suggested improvement or better way to answer.
+
+  Respond in valid JSON format.`;
+
+  const response = await ai.models.generateContent({
+    model: "gemini-2.5-flash",
+    contents: prompt,
+    config: {
+      responseMimeType: "application/json",
+      responseSchema: {
+        type: Type.OBJECT,
+        properties: {
+          rating: { type: Type.INTEGER },
+          feedback: { type: Type.STRING },
+          toneAnalysis: { type: Type.STRING },
+          suggestedImprovement: { type: Type.STRING }
+        },
+        required: ["rating", "feedback", "toneAnalysis", "suggestedImprovement"]
+      }
+    }
+  });
+
+  return JSON.parse(response.text) as InterviewFeedback;
 };
