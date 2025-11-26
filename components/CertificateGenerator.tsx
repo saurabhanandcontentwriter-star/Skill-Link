@@ -11,7 +11,7 @@ interface CertificateGeneratorProps {
 }
 
 type TemplateType = 'modern' | 'classic' | 'minimal';
-type SignatureMode = 'draw' | 'type';
+type SignatureMode = 'draw' | 'type' | 'voice';
 
 const SIGNATURE_FONTS = [
   { name: 'Great Vibes', family: '"Great Vibes", cursive' },
@@ -34,6 +34,10 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({ onBack }) =
   const [signatureMode, setSignatureMode] = useState<SignatureMode>('draw');
   const [typedSignature, setTypedSignature] = useState('');
   const [selectedFont, setSelectedFont] = useState(SIGNATURE_FONTS[0].name);
+
+  // Voice State
+  const [isListening, setIsListening] = useState(false);
+  const [voiceError, setVoiceError] = useState<string | null>(null);
 
   // Signature pad refs
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -69,9 +73,9 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({ onBack }) =
     }
   }, [signatureMode]);
 
-  // Effect to handle Text Signature Generation
+  // Effect to handle Text Signature Generation (Type AND Voice)
   useEffect(() => {
-    if (signatureMode === 'type') {
+    if (signatureMode === 'type' || signatureMode === 'voice') {
         generateTextSignature();
     }
   }, [typedSignature, selectedFont, signatureMode]);
@@ -244,6 +248,48 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({ onBack }) =
         setValidationError(null);
     }
   };
+  
+  const startListening = () => {
+    setVoiceError(null);
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    
+    if (!SpeechRecognition) {
+      setVoiceError("Voice recognition is not supported in this browser.");
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'en-US';
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+
+    recognition.onstart = () => setIsListening(true);
+    
+    recognition.onresult = (event: any) => {
+      const transcript = event.results[0][0].transcript;
+      // Capitalize first letters for name-like appearance
+      const formattedName = transcript.replace(/\b\w/g, (char: string) => char.toUpperCase());
+      setTypedSignature(formattedName);
+      setValidationError(null);
+    };
+
+    recognition.onerror = (event: any) => {
+      console.error("Speech recognition error", event.error);
+      if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+          setVoiceError("Microphone access denied.");
+      } else {
+          setVoiceError("Could not recognize speech. Please try again.");
+      }
+      setIsListening(false);
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+    };
+
+    recognition.start();
+  };
+
 
   const getDisplayDate = () => {
     if (!date) return '';
@@ -266,7 +312,7 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({ onBack }) =
     let error = null;
 
     if (!hasSignature) {
-        setValidationError(signatureMode === 'draw' ? "Please sign the certificate first!" : "Please type your signature.");
+        setValidationError(signatureMode === 'draw' ? "Please sign the certificate first!" : "Please provide a signature.");
         return;
     }
 
@@ -605,10 +651,16 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({ onBack }) =
                         >
                             Type
                         </button>
+                         <button
+                             onClick={() => { setSignatureMode('voice'); setValidationError(null); }}
+                             className={`px-3 py-1 text-xs font-medium rounded-md transition-all flex items-center gap-1 ${signatureMode === 'voice' ? 'bg-electric-blue text-white shadow-sm' : 'text-muted-gray hover:text-white'}`}
+                        >
+                            Voice
+                        </button>
                     </div>
                 </div>
 
-                {signatureMode === 'draw' ? (
+                {signatureMode === 'draw' && (
                      <div className="relative group">
                          {/* Drawing Area */}
                         <div className={`border rounded-lg overflow-hidden bg-white touch-none shadow-inner transition-colors ${validationError ? 'border-red-500 ring-1 ring-red-500' : 'border-slate-700'}`}>
@@ -639,7 +691,9 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({ onBack }) =
                             </div>
                         </div>
                      </div>
-                ) : (
+                )}
+                
+                {signatureMode === 'type' && (
                     <div className="space-y-4 p-4 bg-slate-800/50 border border-slate-700 rounded-lg">
                         {/* Typing Area */}
                         <div>
@@ -673,6 +727,60 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({ onBack }) =
                     </div>
                 )}
 
+                {signatureMode === 'voice' && (
+                    <div className="space-y-4 p-4 bg-slate-800/50 border border-slate-700 rounded-lg text-center">
+                        <div className="flex flex-col items-center justify-center py-4">
+                            <button
+                                onClick={startListening}
+                                disabled={isListening}
+                                className={`p-6 rounded-full transition-all transform hover:scale-105 ${
+                                    isListening 
+                                    ? 'bg-red-500/20 text-red-500 ring-4 ring-red-500/20 animate-pulse' 
+                                    : 'bg-electric-blue/20 text-electric-blue hover:bg-electric-blue hover:text-white'
+                                }`}
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>
+                            </button>
+                            <p className="mt-3 text-sm font-medium text-white">
+                                {isListening ? 'Listening...' : (typedSignature ? 'Tap to Record Again' : 'Tap to Speak Name')}
+                            </p>
+                            {voiceError && <p className="text-xs text-red-400 mt-2">{voiceError}</p>}
+                        </div>
+
+                        {typedSignature && (
+                            <div className="animate-fade-in text-left border-t border-slate-700 pt-4 w-full">
+                                <label className="block text-xs font-medium text-muted-gray mb-2">Recognized Text (Editable)</label>
+                                 <input
+                                    type="text"
+                                    value={typedSignature}
+                                    onChange={(e) => setTypedSignature(e.target.value)}
+                                    className={`w-full px-4 py-3 rounded-lg bg-slate-900 border text-white focus:ring-2 focus:ring-electric-blue focus:outline-none transition font-serif text-lg ${validationError ? 'border-red-500' : 'border-slate-600'}`}
+                                 />
+                                 
+                                 <div className="mt-4">
+                                    <label className="block text-xs font-medium text-muted-gray mb-2">Select Signature Style</label>
+                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                                        {SIGNATURE_FONTS.map((font) => (
+                                            <button
+                                                key={font.name}
+                                                onClick={() => setSelectedFont(font.name)}
+                                                className={`px-2 py-3 rounded border text-center transition-all ${
+                                                    selectedFont === font.name 
+                                                    ? 'bg-white text-black border-electric-blue ring-2 ring-electric-blue/30' 
+                                                    : 'bg-slate-900 text-muted-gray border-slate-600 hover:border-slate-400'
+                                                }`}
+                                                style={{ fontFamily: font.family }}
+                                            >
+                                                <span className="text-lg">{font.name}</span>
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                )}
+
 
                 <div className="flex justify-between items-start text-sm mt-1">
                    <div className="flex-1 mr-4">
@@ -680,7 +788,7 @@ const CertificateGenerator: React.FC<CertificateGeneratorProps> = ({ onBack }) =
                            <span className="block text-red-400 text-xs font-semibold animate-pulse">{validationError}</span>
                        ) : (
                            <span className="block text-muted-gray text-xs">
-                                {signatureMode === 'draw' ? 'Draw inside the box.' : 'Type your name above.'}
+                                {signatureMode === 'draw' ? 'Draw inside the box.' : (signatureMode === 'voice' ? 'Speak clearly to sign.' : 'Type your name above.')}
                            </span>
                        )}
                    </div>
