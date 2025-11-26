@@ -1,10 +1,12 @@
-import React from 'react';
+
+import React, { useState } from 'react';
 import { Notification } from '../types';
 
 interface NotificationPanelProps {
   notifications: Notification[];
   onClose: () => void;
   onDismiss: (id: number) => void;
+  onClearAll: () => void;
 }
 
 const NotificationIcon: React.FC<{ type: Notification['type'] }> = ({ type }) => {
@@ -23,13 +25,48 @@ const NotificationIcon: React.FC<{ type: Notification['type'] }> = ({ type }) =>
   }
 };
 
-const NotificationPanel: React.FC<NotificationPanelProps> = ({ notifications, onClose, onDismiss }) => {
+const NotificationPanel: React.FC<NotificationPanelProps> = ({ notifications, onClose, onDismiss, onClearAll }) => {
+    const [isConfirmingClear, setIsConfirmingClear] = useState(false);
+
     return (
-        <div className="absolute right-0 mt-3 w-80 max-w-sm bg-slate-800/80 backdrop-blur-md border border-slate-700 rounded-lg shadow-2xl z-50 animate-fade-in">
-            <div className="p-4 border-b border-slate-700">
+        <div className="absolute right-0 mt-3 w-80 max-w-sm bg-slate-800/80 backdrop-blur-md border border-slate-700 rounded-lg shadow-2xl z-50 animate-fade-in overflow-hidden">
+            <div className="p-4 border-b border-slate-700 flex justify-between items-center">
                 <h3 className="text-lg font-semibold text-white">Notifications</h3>
+                {notifications.length > 0 && (
+                    <button
+                        onClick={() => setIsConfirmingClear(true)}
+                        className="text-xs font-medium text-red-400 hover:text-red-300 transition-colors px-2 py-1 rounded hover:bg-red-400/10"
+                    >
+                        Clear All
+                    </button>
+                )}
             </div>
-            <div className="max-h-96 overflow-y-auto">
+            <div className="max-h-96 overflow-y-auto relative">
+                {isConfirmingClear && (
+                    <div className="absolute inset-0 bg-slate-900/95 backdrop-blur-sm z-20 flex flex-col items-center justify-center text-center p-6 animate-fade-in">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-8 h-8 text-red-500 mb-3"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                        <p className="text-white font-semibold mb-1">Clear all notifications?</p>
+                        <p className="text-xs text-muted-gray mb-4">This action cannot be undone.</p>
+                        <div className="flex gap-3 w-full">
+                             <button
+                                onClick={() => setIsConfirmingClear(false)}
+                                className="flex-1 px-3 py-2 bg-slate-700 hover:bg-slate-600 text-white text-xs font-bold rounded-lg transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={() => {
+                                    onClearAll();
+                                    setIsConfirmingClear(false);
+                                }}
+                                className="flex-1 px-3 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-lg transition-colors"
+                            >
+                                Yes, Clear
+                            </button>
+                        </div>
+                    </div>
+                )}
+                
                 {notifications.length > 0 ? (
                     <ul>
                         {notifications.map((notification) => (
