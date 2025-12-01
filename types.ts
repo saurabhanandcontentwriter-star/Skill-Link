@@ -69,7 +69,7 @@ export interface NavLinkItem {
   href: string;
   icon: React.ReactNode;
   isFeature?: boolean;
-  view?: 'home' | 'tasks' | 'certificates' | 'interview' | 'ats';
+  view?: 'home' | 'tasks' | 'certificates' | 'interview' | 'ats' | 'mentors';
 }
 
 export interface Task {
@@ -116,3 +116,5 @@ export interface AtsAnalysis {
 }
 
 export type VoiceStyle = 'Friendly' | 'Formal' | 'Calm' | 'Energetic';
+
+export type ActiveView = 'home' | 'mentor' | 'workshop' | 'profile' | 'tasks' | 'certificates' | 'interview' | 'ats' | 'mentors';

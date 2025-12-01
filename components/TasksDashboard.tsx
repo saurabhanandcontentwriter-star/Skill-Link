@@ -1,14 +1,14 @@
 
 import React, { useState, FormEvent, useMemo } from 'react';
-import { TASKS, BADGES, ACHIEVEMENT_CRITERIA } from '../constants';
-import { Task, Badge, UserAchievement } from '../types';
+import { Task } from '../types';
 import ConfirmDeleteModal from './ConfirmDeleteModal';
-import AchievementToast from './AchievementToast';
 
 interface TasksDashboardProps {
   onBack: () => void;
-  achievements: UserAchievement[];
-  onAwardBadge: (badge: Badge) => boolean;
+  tasks: Task[];
+  onAddTask: (text: string, dueDate: string | null) => void;
+  onToggleTask: (id: number) => void;
+  onDeleteTask: (id: number) => void;
 }
 
 const formatDate = (dateString: string): { text: string, colorClass: string } => {
@@ -75,13 +75,10 @@ const TaskItem: React.FC<{
 };
 
 
-const TasksDashboard: React.FC<TasksDashboardProps> = ({ onBack, onAwardBadge }) => {
-  const [tasks, setTasks] = useState<Task[]>(TASKS);
+const TasksDashboard: React.FC<TasksDashboardProps> = ({ onBack, tasks, onAddTask, onToggleTask, onDeleteTask }) => {
   const [newTaskText, setNewTaskText] = useState('');
   const [newDueDate, setNewDueDate] = useState('');
   const [taskToDelete, setTaskToDelete] = useState<number | null>(null);
-  const [unlockedBadge, setUnlockedBadge] = useState<Badge | null>(null);
-
 
   const completedCount = useMemo(() => tasks.filter(t => t.completed).length, [tasks]);
   const progress = useMemo(() => tasks.length > 0 ? (completedCount / tasks.length) * 100 : 0, [completedCount, tasks]);
@@ -100,59 +97,23 @@ const TasksDashboard: React.FC<TasksDashboardProps> = ({ onBack, onAwardBadge })
     return [...incomplete, ...completed];
   }, [tasks]);
 
-  const handleAddTask = (e: FormEvent) => {
+  const handleSubmitTask = (e: FormEvent) => {
     e.preventDefault();
     const trimmedText = newTaskText.trim();
     if (trimmedText) {
-      const newTask: Task = {
-        id: Date.now(),
-        text: trimmedText,
-        completed: false,
-        dueDate: newDueDate || null,
-      };
-      setTasks(prevTasks => [newTask, ...prevTasks]);
+      onAddTask(trimmedText, newDueDate || null);
       setNewTaskText('');
       setNewDueDate('');
     }
   };
 
-  const handleToggleTask = (id: number) => {
-    let newTasks: Task[] = [];
-    setTasks(prevTasks => {
-      newTasks = prevTasks.map(task =>
-        task.id === id ? { ...task, completed: !task.completed } : task
-      );
-
-      const toggledTask = prevTasks.find(t => t.id === id);
-      const isCompletingTask = toggledTask && !toggledTask.completed;
-
-      if (isCompletingTask) {
-        const newCompletedCount = newTasks.filter(t => t.completed).length;
-        const totalTasks = newTasks.length;
-        
-        BADGES.forEach(badge => {
-          const criteriaFn = ACHIEVEMENT_CRITERIA[badge.id];
-          if (criteriaFn && criteriaFn(newCompletedCount, totalTasks)) {
-            const wasAwarded = onAwardBadge(badge);
-            if (wasAwarded) {
-              setUnlockedBadge(badge);
-              setTimeout(() => setUnlockedBadge(null), 5000); // Auto-hide toast
-            }
-          }
-        });
-      }
-      
-      return newTasks;
-    });
-  };
-
-  const handleDeleteTask = (id: number) => {
+  const handleDeleteClick = (id: number) => {
     setTaskToDelete(id);
   };
 
   const handleConfirmDelete = () => {
     if (taskToDelete === null) return;
-    setTasks(prevTasks => prevTasks.filter(task => task.id !== taskToDelete));
+    onDeleteTask(taskToDelete);
     setTaskToDelete(null);
   };
 
@@ -191,7 +152,7 @@ const TasksDashboard: React.FC<TasksDashboardProps> = ({ onBack, onAwardBadge })
 
 
         {/* Add Task Form */}
-        <form onSubmit={handleAddTask} className="flex flex-col sm:flex-row gap-3 mb-8">
+        <form onSubmit={handleSubmitTask} className="flex flex-col sm:flex-row gap-3 mb-8">
           <input
             type="text"
             value={newTaskText}
@@ -223,8 +184,8 @@ const TasksDashboard: React.FC<TasksDashboardProps> = ({ onBack, onAwardBadge })
                 <TaskItem
                   key={task.id}
                   task={task}
-                  onToggle={handleToggleTask}
-                  onDelete={handleDeleteTask}
+                  onToggle={onToggleTask}
+                  onDelete={handleDeleteClick}
                 />
               ))}
             </ul>
@@ -235,7 +196,6 @@ const TasksDashboard: React.FC<TasksDashboardProps> = ({ onBack, onAwardBadge })
           )}
         </div>
       </div>
-      {unlockedBadge && <AchievementToast badge={unlockedBadge} onClose={() => setUnlockedBadge(null)} />}
       {taskToDelete !== null && (
         <ConfirmDeleteModal 
           onConfirm={handleConfirmDelete}

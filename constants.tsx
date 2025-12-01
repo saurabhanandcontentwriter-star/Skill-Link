@@ -191,26 +191,23 @@ export const NAV_LINKS: NavLinkItem[] = [
     text: 'Mentors',
     href: '#',
     icon: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>,
-    isFeature: true,
+    view: 'mentors',
   },
 ];
 
 // Gamification Content
 export const BADGES: Badge[] = [
-  { id: 'task_novice', name: 'Task Novice', description: 'Completed your first learning task.', icon: '🌱' },
-  { id: 'task_apprentice', name: 'Task Apprentice', description: 'Completed 3 learning tasks.', icon: '🛠️' },
-  { id: 'task_journeyman', name: 'Task Journeyman', description: 'Completed 5 learning tasks.', icon: '🚀' },
-  { id: 'completionist', name: 'Completionist', description: 'Completed all initial learning tasks.', icon: '🏆' },
+  { id: 'task_novice', name: 'Task Novice', description: 'Complete your first task.', icon: '🌱' },
+  { id: 'task_master', name: 'Task Master', description: 'Complete 5 tasks.', icon: '🚀' },
+  { id: 'dedicated_learner', name: 'Dedicated Learner', description: 'Complete 10 tasks.', icon: '🔥' },
+  { id: 'react_pro', name: 'React Pro', description: 'Master core React concepts.', icon: '⚛️' },
 ];
 
-export const ACHIEVEMENT_CRITERIA: { [key: string]: (completedCount: number, totalTasks: number) => boolean } = {
-  'task_novice': (completedCount) => completedCount >= 1,
-  'task_apprentice': (completedCount) => completedCount >= 3,
-  'task_journeyman': (completedCount) => completedCount >= 5,
-  'completionist': (completedCount, totalTasks) => completedCount > 0 && completedCount === totalTasks,
+export const ACHIEVEMENT_CRITERIA: Record<string, (completedCount: number, totalCount: number) => boolean> = {
+  'task_novice': (c) => c >= 1,
+  'task_master': (c) => c >= 5,
+  'dedicated_learner': (c) => c >= 10,
+  'react_pro': () => false, // Manual award for now
 };
 
-// Mock initial user achievements
-export const USER_ACHIEVEMENTS: UserAchievement[] = [
-    { badgeId: 'task_novice', dateEarned: new Date(new Date().setDate(new Date().getDate()-1)).toISOString() },
-];
+export const USER_ACHIEVEMENTS: UserAchievement[] = [];

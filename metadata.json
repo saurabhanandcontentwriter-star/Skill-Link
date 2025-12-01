@@ -2,6 +2,7 @@
   "name": "SkillLink - AI/Web3 Mentorship Platform",
   "description": "A modern mentorship and learning community platform designed for AI and Web3 learners, leveraging Gemini for up-to-date, accurate information.",
   "requestFramePermissions": [
-    "microphone"
+    "microphone",
+    "camera"
   ]
 }

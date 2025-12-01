@@ -12,7 +12,13 @@ type Gender = 'male' | 'female';
 
 const TOPICS = ['React', 'Node.js', 'System Design', 'Behavioral', 'Web3', 'AI Concepts'];
 const DIFFICULTIES = ['Beginner', 'Intermediate', 'Advanced'];
-const VOICE_STYLES: VoiceStyle[] = ['Friendly', 'Formal', 'Calm', 'Energetic'];
+
+const VOICE_STYLES: { id: VoiceStyle; icon: string }[] = [
+  { id: 'Friendly', icon: '😊' },
+  { id: 'Formal', icon: '👔' },
+  { id: 'Calm', icon: '🌿' },
+  { id: 'Energetic', icon: '⚡' },
+];
 
 const AiInterview: React.FC<AiInterviewProps> = ({ onBack }) => {
   const [state, setState] = useState<InterviewState>('setup');
@@ -27,14 +33,19 @@ const AiInterview: React.FC<AiInterviewProps> = ({ onBack }) => {
   const [userAnswer, setUserAnswer] = useState('');
   const [feedback, setFeedback] = useState<InterviewFeedback | null>(null);
   
-  // Audio/Voice State
+  // Audio/Video State
   const [isLoading, setIsLoading] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [micError, setMicError] = useState<string | null>(null);
+  const [cameraError, setCameraError] = useState(false);
 
   const recognitionRef = useRef<any>(null);
   const voicesRef = useRef<SpeechSynthesisVoice[]>([]);
+  
+  // Camera Refs
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
 
   // Initialize Speech Recognition & Load Voices
   useEffect(() => {
@@ -73,7 +84,51 @@ const AiInterview: React.FC<AiInterviewProps> = ({ onBack }) => {
 
       recognitionRef.current = recognition;
     }
+    
+    // Cleanup camera on unmount
+    return () => {
+        stopVideo();
+    };
   }, []);
+
+  const startVideo = async () => {
+    setCameraError(false);
+    
+    // Check if mediaDevices API is available
+    if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) {
+        setCameraError(true);
+        return;
+    }
+
+    try {
+        // Check for video input devices before requesting stream
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const hasVideo = devices.some(device => device.kind === 'videoinput');
+        
+        if (!hasVideo) {
+            console.warn("No video input device found.");
+            setCameraError(true);
+            return;
+        }
+
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        streamRef.current = stream;
+        if (videoRef.current) {
+            videoRef.current.srcObject = stream;
+        }
+    } catch (err) {
+        console.error("Error accessing camera:", err);
+        setCameraError(true);
+        // Do not block the interview; proceed without video
+    }
+  };
+
+  const stopVideo = () => {
+    if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+        streamRef.current = null;
+    }
+  };
 
   const speakText = (text: string) => {
     if ('speechSynthesis' in window) {
@@ -90,19 +145,19 @@ const AiInterview: React.FC<AiInterviewProps> = ({ onBack }) => {
       switch (selectedVoiceStyle) {
         case 'Friendly':
           pitch = selectedGender === 'female' ? 1.1 : 1.05;
-          rate = 1.0;
+          rate = 1.05; // Slightly upbeat
           break;
         case 'Formal':
-          pitch = selectedGender === 'female' ? 1.0 : 0.95;
-          rate = 0.9;
+          pitch = selectedGender === 'female' ? 1.0 : 1.0;
+          rate = 0.9; // Measured, professional pace
           break;
         case 'Calm':
-          pitch = selectedGender === 'female' ? 0.95 : 0.9;
-          rate = 0.85;
+          pitch = selectedGender === 'female' ? 0.95 : 0.9; // Lower
+          rate = 0.85; // Slower, soothing
           break;
         case 'Energetic':
-          pitch = selectedGender === 'female' ? 1.2 : 1.1;
-          rate = 1.15;
+          pitch = selectedGender === 'female' ? 1.2 : 1.15; // Higher
+          rate = 1.2; // Faster
           break;
       }
       utterance.pitch = pitch;
@@ -139,6 +194,7 @@ const AiInterview: React.FC<AiInterviewProps> = ({ onBack }) => {
     setIsLoading(true);
     setMicError(null);
     setIsIntroPhase(true); // Start with Intro Phase
+    startVideo(); // Enable Camera
     
     const interviewerName = selectedGender === 'male' ? 'Arjun' : 'Aditi';
 
@@ -151,8 +207,14 @@ const AiInterview: React.FC<AiInterviewProps> = ({ onBack }) => {
     } catch (error) {
       console.error(error);
       alert("Failed to start interview. Check API Key.");
+      stopVideo();
       setState('setup');
     }
+  };
+
+  const endSession = () => {
+      stopVideo();
+      setState('setup');
   };
 
   const handleSubmitAnswer = async () => {
@@ -236,9 +298,9 @@ const AiInterview: React.FC<AiInterviewProps> = ({ onBack }) => {
 
   // Avatar Component
   const Avatar = () => {
-      // Professional real avatar URLs
-      const maleImage = "https://images.unsplash.com/photo-1566492031773-4f4e44671857?auto=format&fit=crop&q=80&w=800";
-      const femaleImage = "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=800";
+      // 3D Avatar URLs (Indian Context)
+      const maleImage = "https://img.freepik.com/free-psd/3d-illustration-human-avatar-profile_23-2150671142.jpg";
+      const femaleImage = "https://img.freepik.com/free-psd/3d-illustration-person-with-long-hair_23-2149436184.jpg";
       
       const avatarSrc = selectedGender === 'male' ? maleImage : femaleImage;
       const interviewerName = selectedGender === 'male' ? 'Arjun' : 'Aditi';
@@ -315,7 +377,7 @@ const AiInterview: React.FC<AiInterviewProps> = ({ onBack }) => {
                                 : 'bg-slate-800/50 border-slate-700 hover:bg-slate-800'
                             }`}
                         >
-                            <img src="https://images.unsplash.com/photo-1566492031773-4f4e44671857?auto=format&fit=crop&q=80&w=200" className="w-16 h-16 rounded-full mb-2 object-cover" alt="Male" />
+                            <img src="https://img.freepik.com/free-psd/3d-illustration-human-avatar-profile_23-2150671142.jpg" className="w-16 h-16 rounded-full mb-2 object-cover" alt="Male" />
                             <span className="text-white font-semibold">Arjun</span>
                         </button>
                         <button
@@ -326,7 +388,7 @@ const AiInterview: React.FC<AiInterviewProps> = ({ onBack }) => {
                                 : 'bg-slate-800/50 border-slate-700 hover:bg-slate-800'
                             }`}
                         >
-                             <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=200" className="w-16 h-16 rounded-full mb-2 object-cover" alt="Female" />
+                             <img src="https://img.freepik.com/free-psd/3d-illustration-person-with-long-hair_23-2149436184.jpg" className="w-16 h-16 rounded-full mb-2 object-cover" alt="Female" />
                             <span className="text-white font-semibold">Aditi</span>
                         </button>
                     </div>
@@ -338,15 +400,16 @@ const AiInterview: React.FC<AiInterviewProps> = ({ onBack }) => {
                     <div className="grid grid-cols-2 gap-2">
                         {VOICE_STYLES.map(style => (
                             <button
-                                key={style}
-                                onClick={() => setSelectedVoiceStyle(style)}
-                                className={`px-3 py-2 rounded-lg text-center text-sm font-medium transition-all active:scale-95 border ${
-                                    selectedVoiceStyle === style
+                                key={style.id}
+                                onClick={() => setSelectedVoiceStyle(style.id)}
+                                className={`px-3 py-2 rounded-lg text-center text-sm font-medium transition-all active:scale-95 border flex items-center justify-center gap-2 ${
+                                    selectedVoiceStyle === style.id
                                     ? 'bg-neon-purple/20 border-neon-purple text-white'
                                     : 'bg-slate-800 border-slate-700 text-muted-gray hover:border-slate-500'
                                 }`}
                             >
-                                {style}
+                                <span>{style.icon}</span>
+                                {style.id}
                             </button>
                         ))}
                     </div>
@@ -386,12 +449,32 @@ const AiInterview: React.FC<AiInterviewProps> = ({ onBack }) => {
       )}
 
       {state === 'interview' && (
-        <div className="bg-slate-900/30 backdrop-blur-md border border-slate-700 rounded-2xl p-6 sm:p-8 shadow-2xl relative">
-            <div className="absolute top-4 right-4 flex gap-2">
+        <div className="bg-slate-900/30 backdrop-blur-md border border-slate-700 rounded-2xl p-6 sm:p-8 shadow-2xl relative min-h-[500px]">
+            {/* Info Badges */}
+            <div className="absolute top-4 left-4 flex gap-2 z-10">
                  {isIntroPhase && <span className="px-3 py-1 bg-yellow-400/20 text-yellow-300 rounded-full text-xs font-mono border border-yellow-400/30">Introduction Phase</span>}
                 <span className="px-3 py-1 bg-slate-800 rounded-full text-xs font-mono text-muted-gray border border-slate-700">
                     {selectedTopic} • {selectedDifficulty}
                 </span>
+            </div>
+
+            {/* User Video Feed */}
+            <div className="absolute top-4 right-4 w-32 h-24 sm:w-48 sm:h-36 bg-black rounded-lg border-2 border-slate-600 overflow-hidden shadow-xl z-20">
+                {!cameraError ? (
+                    <video 
+                        ref={videoRef} 
+                        autoPlay 
+                        muted 
+                        playsInline 
+                        className="w-full h-full object-cover transform scale-x-[-1]" // Mirror effect
+                    />
+                ) : (
+                    <div className="w-full h-full flex flex-col items-center justify-center bg-slate-800 text-muted-gray p-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mb-1 opacity-50"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+                        <span className="text-[10px] text-center leading-tight">Camera Off</span>
+                    </div>
+                )}
+                <div className="absolute bottom-1 left-2 text-[10px] text-white/70 font-medium">You</div>
             </div>
 
             <Avatar />
@@ -402,7 +485,7 @@ const AiInterview: React.FC<AiInterviewProps> = ({ onBack }) => {
                 </div>
             ) : (
                 <>
-                    <div className="text-center mb-8">
+                    <div className="text-center mb-8 mt-4">
                         <h2 className="text-xl sm:text-2xl font-semibold text-white leading-relaxed">"{currentQuestion}"</h2>
                         <button 
                             onClick={() => speakText(currentQuestion)}
@@ -496,7 +579,7 @@ const AiInterview: React.FC<AiInterviewProps> = ({ onBack }) => {
 
                             <div className="mt-8 flex justify-center gap-4">
                                 <button
-                                    onClick={() => setState('setup')}
+                                    onClick={endSession}
                                     className="px-6 py-3 border border-slate-600 text-muted-gray font-semibold rounded-lg hover:bg-slate-800 hover:text-white transition-all active:scale-95"
                                 >
                                     End Session

@@ -1,9 +1,8 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Logo, NOTIFICATIONS, NAV_LINKS } from '../constants';
-import { Notification, NavLinkItem } from '../types';
+import { Notification, NavLinkItem, ActiveView } from '../types';
 import NotificationPanel from './NotificationPanel';
-import { ActiveView } from '../App';
 
 const NavLink: React.FC<{ href: string; icon: React.ReactNode; text: string; active?: boolean; onClick?: (e: React.MouseEvent) => void; }> = ({ href, icon, text, active, onClick }) => (
   <a 
@@ -103,6 +102,7 @@ const Header: React.FC<HeaderProps> = ({ onNavigate, activeView, isPro = false }
     if (activeView === 'certificates') return 'Certificates';
     if (activeView === 'interview') return 'Interview';
     if (activeView === 'ats') return 'Resume Checker';
+    if (activeView === 'mentors') return 'Mentors';
     return '';
   };
 

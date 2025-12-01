@@ -6,6 +6,7 @@ import Onboarding from './components/Onboarding';
 import ProfileSetup from './components/ProfileSetup';
 import HomeDashboard from './components/HomeDashboard';
 import MentorProfile from './components/MentorProfile';
+import FeaturedMentors from './components/FeaturedMentors';
 import LiveSession from './components/LiveSession';
 import Profile from './components/Profile';
 import Chatbot from './components/Chatbot';
@@ -13,10 +14,9 @@ import TasksDashboard from './components/TasksDashboard';
 import CertificateGenerator from './components/CertificateGenerator';
 import AiInterview from './components/AiInterview';
 import AtsResumeChecker from './components/AtsResumeChecker';
-import { Mentor, Workshop, UserAchievement, Badge } from './types';
-import { USER_ACHIEVEMENTS } from './constants';
-
-export type ActiveView = 'home' | 'mentor' | 'workshop' | 'profile' | 'tasks' | 'certificates' | 'interview' | 'ats';
+import AchievementToast from './components/AchievementToast';
+import { Mentor, Workshop, UserAchievement, Badge, Task, ActiveView } from './types';
+import { USER_ACHIEVEMENTS, TASKS, BADGES, ACHIEVEMENT_CRITERIA } from './constants';
 
 const App: React.FC = () => {
   const [isOnboarded, setIsOnboarded] = useState(false);
@@ -27,6 +27,10 @@ const App: React.FC = () => {
   const [selectedWorkshop, setSelectedWorkshop] = useState<Workshop | null>(null);
   const [achievements, setAchievements] = useState<UserAchievement[]>(USER_ACHIEVEMENTS);
   const [isPro, setIsPro] = useState(false);
+
+  // Lifted Tasks State
+  const [tasks, setTasks] = useState<Task[]>(TASKS);
+  const [unlockedBadge, setUnlockedBadge] = useState<Badge | null>(null);
 
   const handleOnboardingComplete = () => {
     setIsOnboarded(true);
@@ -80,6 +84,55 @@ const App: React.FC = () => {
       setIsPro(true);
   };
 
+  // Task Handlers
+  const handleAddTask = (text: string, dueDate: string | null = null) => {
+    const newTask: Task = {
+      id: Date.now(),
+      text,
+      completed: false,
+      dueDate,
+    };
+    setTasks(prevTasks => [newTask, ...prevTasks]);
+  };
+
+  const handleDeleteTask = (id: number) => {
+    // For simplicity with the existing Dashboard component structure, 
+    // we will pass this handler to the Dashboard which manages the confirmation modal.
+    setTasks(prev => prev.filter(t => t.id !== id));
+  };
+
+  const handleToggleTask = (id: number) => {
+    // We need to calculate the new state to check for badges immediately
+    const currentTasks = tasks;
+    const taskToToggle = currentTasks.find(t => t.id === id);
+    
+    if (!taskToToggle) return;
+
+    const newCompletedStatus = !taskToToggle.completed;
+    const newTasks = currentTasks.map(task =>
+      task.id === id ? { ...task, completed: newCompletedStatus } : task
+    );
+
+    setTasks(newTasks);
+
+    // Badge Logic
+    if (newCompletedStatus) {
+      const completedCount = newTasks.filter(t => t.completed).length;
+      const totalTasks = newTasks.length;
+      
+      BADGES.forEach(badge => {
+        const criteriaFn = ACHIEVEMENT_CRITERIA[badge.id];
+        if (criteriaFn && criteriaFn(completedCount, totalTasks)) {
+          const wasAwarded = handleAwardBadge(badge);
+          if (wasAwarded) {
+            setUnlockedBadge(badge);
+            setTimeout(() => setUnlockedBadge(null), 5000);
+          }
+        }
+      });
+    }
+  };
+
 
   if (!isOnboarded) {
     return <Onboarding onComplete={handleOnboardingComplete} />;
@@ -92,7 +145,9 @@ const App: React.FC = () => {
   const renderContent = () => {
     switch (activeView) {
       case 'mentor':
-        return selectedMentor && <MentorProfile mentor={selectedMentor} onBack={handleDeselectMentor} />;
+        return selectedMentor && <MentorProfile mentor={selectedMentor} onBack={handleDeselectMentor} onAddTask={handleAddTask} />;
+      case 'mentors':
+        return <FeaturedMentors onSelectMentor={handleSelectMentor} />;
       case 'workshop':
         return selectedWorkshop && <LiveSession workshop={selectedWorkshop} onBack={handleDeselectWorkshop} />;
       case 'profile':
@@ -100,8 +155,10 @@ const App: React.FC = () => {
       case 'tasks':
         return <TasksDashboard 
                   onBack={() => handleNavigate('home')} 
-                  achievements={achievements} 
-                  onAwardBadge={handleAwardBadge}
+                  tasks={tasks}
+                  onAddTask={handleAddTask}
+                  onToggleTask={handleToggleTask}
+                  onDeleteTask={handleDeleteTask}
                 />;
       case 'certificates':
         return <CertificateGenerator onBack={() => handleNavigate('home')} isPro={isPro} onUpgrade={handleUpgrade} />;
@@ -123,6 +180,7 @@ const App: React.FC = () => {
       </main>
       <Footer />
       <Chatbot />
+      {unlockedBadge && <AchievementToast badge={unlockedBadge} onClose={() => setUnlockedBadge(null)} />}
     </div>
   );
 };
