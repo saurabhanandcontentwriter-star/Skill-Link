@@ -229,11 +229,14 @@ export const analyzeResume = async (
   Analyze how well the candidate's resume matches the job description.
   
   Provide:
-  1. A Match Score (0-100).
-  2. A brief summary of the fit.
-  3. List of Missing Keywords/Skills that are in the JD but missing from the resume.
-  4. Formatting or Structural Issues (if any inferred).
-  5. 3 Actionable Tips to improve the resume for this specific role.
+  1. A Total Match Score (0-100).
+  2. A Skills Match Score (0-100) based on keyword overlap.
+  3. An Experience Match Score (0-100) based on relevance of roles.
+  4. A Formatting/Structure Score (0-100) based on readability and standard sections.
+  5. A brief summary of the fit.
+  6. List of Missing Keywords/Skills that are in the JD but missing from the resume.
+  7. Formatting or Structural Issues (if any inferred).
+  8. 3 Actionable Tips to improve the resume for this specific role.
 
   Respond in valid JSON format.`;
 
@@ -266,12 +269,15 @@ export const analyzeResume = async (
         type: Type.OBJECT,
         properties: {
           matchScore: { type: Type.INTEGER },
+          skillsScore: { type: Type.INTEGER },
+          experienceScore: { type: Type.INTEGER },
+          formattingScore: { type: Type.INTEGER },
           summary: { type: Type.STRING },
           missingKeywords: { type: Type.ARRAY, items: { type: Type.STRING } },
           formattingIssues: { type: Type.ARRAY, items: { type: Type.STRING } },
           improvementTips: { type: Type.ARRAY, items: { type: Type.STRING } }
         },
-        required: ["matchScore", "summary", "missingKeywords", "formattingIssues", "improvementTips"]
+        required: ["matchScore", "skillsScore", "experienceScore", "formattingScore", "summary", "missingKeywords", "formattingIssues", "improvementTips"]
       }
     }
   });

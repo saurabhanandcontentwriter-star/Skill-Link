@@ -3,6 +3,7 @@
   "description": "A modern mentorship and learning community platform designed for AI and Web3 learners, leveraging Gemini for up-to-date, accurate information.",
   "requestFramePermissions": [
     "microphone",
-    "camera"
+    "camera",
+    "geolocation"
   ]
 }

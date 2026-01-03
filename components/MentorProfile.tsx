@@ -34,10 +34,20 @@ const MentorProfile: React.FC<MentorProfileProps> = ({ mentor, onBack, onAddTask
   const prevScrollHeightRef = useRef<number>(0);
   const shouldScrollToBottomRef = useRef<boolean>(true);
 
-  // Video Refs
+  // Video Refs & State
   const videoRef = useRef<HTMLVideoElement>(null);
+  const screenRef = useRef<HTMLVideoElement>(null); // New ref for screen share
   const streamRef = useRef<MediaStream | null>(null);
+  const screenStreamRef = useRef<MediaStream | null>(null); // New ref for screen stream
+  
   const [cameraError, setCameraError] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
+  const [isCameraOff, setIsCameraOff] = useState(false);
+  
+  // Advanced Video Features
+  const [isScreenSharing, setIsScreenSharing] = useState(false);
+  const [showChat, setShowChat] = useState(false);
+  const [callDuration, setCallDuration] = useState(0);
 
   // --- Initialization & History Loading ---
   useEffect(() => {
@@ -95,7 +105,7 @@ const MentorProfile: React.FC<MentorProfileProps> = ({ mentor, onBack, onAddTask
     if (shouldScrollToBottomRef.current) {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [messages, isLoading]);
+  }, [messages, isLoading, showChat, isVideoCallOpen]);
 
   const loadOlderMessages = async () => {
       setIsLoadingHistory(true);
@@ -127,9 +137,6 @@ const MentorProfile: React.FC<MentorProfileProps> = ({ mentor, onBack, onAddTask
   };
 
   const updateHistory = (newMsgs: Message[]) => {
-      // Merge with full history
-      // Note: This logic assumes 'messages' state only contains the *tail* of history + new messages.
-      // A safer way is to just append new interactions to fullHistoryRef directly.
       const lastMsg = newMsgs[newMsgs.length - 1];
       fullHistoryRef.current = [...fullHistoryRef.current, lastMsg];
       localStorage.setItem(`chat_history_${mentor.name}`, JSON.stringify(fullHistoryRef.current));
@@ -167,9 +174,47 @@ const MentorProfile: React.FC<MentorProfileProps> = ({ mentor, onBack, onAddTask
   };
 
   // --- Video Call Logic ---
+  
+  // Timer for call duration
+  useEffect(() => {
+    let interval: number;
+    if (isVideoCallOpen) {
+        interval = window.setInterval(() => {
+            setCallDuration(prev => prev + 1);
+        }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [isVideoCallOpen]);
+
+  // Effect to attach user video stream to video element when it becomes available
+  useEffect(() => {
+    if (videoRef.current && streamRef.current) {
+      videoRef.current.srcObject = streamRef.current;
+    }
+  }, [isVideoCallOpen, isScreenSharing]);
+
+  // Effect to attach screen share stream to screen element
+  useEffect(() => {
+    if (screenRef.current && screenStreamRef.current) {
+      screenRef.current.srcObject = screenStreamRef.current;
+    }
+  }, [isScreenSharing]);
+
+  const formatTime = (seconds: number) => {
+      const hrs = Math.floor(seconds / 3600);
+      const mins = Math.floor((seconds % 3600) / 60);
+      const secs = seconds % 60;
+      return `${hrs > 0 ? hrs.toString().padStart(2, '0') + ':' : ''}${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
   const startVideoCall = async () => {
       setIsVideoCallOpen(true);
       setCameraError(false);
+      setIsMuted(false);
+      setIsCameraOff(false);
+      setIsScreenSharing(false);
+      setShowChat(false);
+      setCallDuration(0);
 
       if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) {
           setCameraError(true);
@@ -183,11 +228,8 @@ const MentorProfile: React.FC<MentorProfileProps> = ({ mentor, onBack, onAddTask
           if (hasVideo) {
               const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
               streamRef.current = stream;
-              if (videoRef.current) {
-                  videoRef.current.srcObject = stream;
-              }
+              // stream will be attached via useEffect
           } else {
-              // No video device found, fallback to audio only
               console.warn("No video input device found, falling back to audio.");
               setCameraError(true);
               const audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -196,7 +238,6 @@ const MentorProfile: React.FC<MentorProfileProps> = ({ mentor, onBack, onAddTask
       } catch (err) {
           console.error("Camera/Audio access failed", err);
           setCameraError(true);
-          // Try to fallback to audio only if video+audio failed (e.g. permission denied specifically for video)
           try {
              const audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
              streamRef.current = audioStream;
@@ -211,7 +252,52 @@ const MentorProfile: React.FC<MentorProfileProps> = ({ mentor, onBack, onAddTask
           streamRef.current.getTracks().forEach(track => track.stop());
           streamRef.current = null;
       }
+      if (screenStreamRef.current) {
+          screenStreamRef.current.getTracks().forEach(track => track.stop());
+          screenStreamRef.current = null;
+      }
       setIsVideoCallOpen(false);
+  };
+
+  const toggleMute = () => {
+    if (streamRef.current) {
+      streamRef.current.getAudioTracks().forEach(track => track.enabled = !track.enabled);
+      setIsMuted(prev => !prev);
+    }
+  };
+
+  const toggleCamera = () => {
+    if (streamRef.current) {
+      streamRef.current.getVideoTracks().forEach(track => track.enabled = !track.enabled);
+      setIsCameraOff(prev => !prev);
+    }
+  };
+
+  const toggleScreenShare = async () => {
+      if (isScreenSharing) {
+          // Stop sharing
+          if (screenStreamRef.current) {
+              screenStreamRef.current.getTracks().forEach(track => track.stop());
+              screenStreamRef.current = null;
+          }
+          setIsScreenSharing(false);
+      } else {
+          // Start sharing
+          try {
+              const stream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+              screenStreamRef.current = stream;
+              setIsScreenSharing(true);
+              // stream will be attached via useEffect
+              
+              // Handle user stopping share via browser UI
+              stream.getVideoTracks()[0].onended = () => {
+                  setIsScreenSharing(false);
+                  screenStreamRef.current = null;
+              };
+          } catch (err) {
+              console.error("Screen share failed", err);
+          }
+      }
   };
 
   const handleAddToTasks = () => {
@@ -408,35 +494,153 @@ const MentorProfile: React.FC<MentorProfileProps> = ({ mentor, onBack, onAddTask
 
       {/* Video Call Modal */}
       {isVideoCallOpen && (
-          <div className="fixed inset-0 z-50 bg-black/90 flex flex-col animate-fade-in">
-              <div className="absolute top-4 right-4 z-50">
-                  <button onClick={endVideoCall} className="bg-red-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-red-700 transition-colors">
-                      End Call
-                  </button>
-              </div>
-              
-              <div className="flex-1 relative flex items-center justify-center">
-                  {/* Mentor 'Video' (Avatar Simulation) */}
-                  <div className="flex flex-col items-center">
-                      <div className="w-48 h-48 rounded-full border-4 border-electric-blue overflow-hidden shadow-[0_0_50px_rgba(0,102,255,0.5)] animate-pulse">
-                          <img src={mentor.avatarUrl} alt={mentor.name} className="w-full h-full object-cover" />
+          <div className="fixed inset-0 z-[60] bg-black flex flex-col animate-fade-in">
+              {/* Top Info Bar */}
+              <div className="absolute top-0 left-0 right-0 p-4 z-20 flex justify-between items-start bg-gradient-to-b from-black/80 to-transparent">
+                  <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-2 bg-red-600/20 border border-red-600/50 px-3 py-1 rounded-full">
+                          <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
+                          <span className="text-red-500 font-bold text-xs tracking-wider">REC</span>
+                          <span className="text-white font-mono text-sm ml-2">{formatTime(callDuration)}</span>
                       </div>
-                      <h2 className="mt-4 text-2xl font-bold text-white">{mentor.name}</h2>
-                      <p className="text-electric-blue animate-pulse">Speaking...</p>
+                      <div className="bg-slate-800/60 backdrop-blur-sm px-4 py-1.5 rounded-full border border-slate-700">
+                          <span className="text-white text-sm font-medium">{mentor.name}</span>
+                          <span className="text-muted-gray text-xs ml-2">• Mentor Session</span>
+                      </div>
+                  </div>
+                  
+                  {/* Network Indicator */}
+                  <div className="flex items-end gap-1 h-4">
+                      <div className="w-1 h-2 bg-green-500 rounded-sm"></div>
+                      <div className="w-1 h-3 bg-green-500 rounded-sm"></div>
+                      <div className="w-1 h-4 bg-green-500 rounded-sm"></div>
+                  </div>
+              </div>
+
+              {/* Main Stage */}
+              <div className="flex-1 relative flex bg-slate-900 overflow-hidden">
+                  
+                  {/* Main Video Feed (Mentor or Screen Share) */}
+                  <div className="flex-1 relative flex items-center justify-center">
+                        {isScreenSharing ? (
+                            <video ref={screenRef} autoPlay playsInline className="w-full h-full object-contain bg-black" />
+                        ) : (
+                            <div className="relative w-full h-full flex items-center justify-center">
+                                <div className="absolute inset-0 bg-slate-800/30 backdrop-blur-sm"></div>
+                                <div className="relative z-10 flex flex-col items-center">
+                                    <div className="relative w-32 h-32 sm:w-48 sm:h-48 rounded-full border-4 border-electric-blue/50 p-1 shadow-[0_0_60px_rgba(0,102,255,0.3)] animate-pulse">
+                                        <img src={mentor.avatarUrl} alt={mentor.name} className="w-full h-full rounded-full object-cover" />
+                                    </div>
+                                    <h2 className="mt-4 text-2xl font-bold text-white tracking-wide">{mentor.name}</h2>
+                                    <p className="text-electric-blue text-sm animate-pulse mt-1">Speaking...</p>
+                                </div>
+                            </div>
+                        )}
                   </div>
 
-                  {/* User Self View (PiP) */}
-                  <div className="absolute bottom-8 right-8 w-48 h-36 bg-black border-2 border-slate-700 rounded-xl overflow-hidden shadow-2xl">
-                      {!cameraError ? (
+                  {/* Chat Overlay (Slide In) */}
+                  {showChat && (
+                      <div className="w-80 bg-slate-900/90 border-l border-slate-700 flex flex-col animate-slide-in-right z-20 backdrop-blur-md">
+                          <div className="p-4 border-b border-slate-700 flex justify-between items-center">
+                              <h3 className="text-white font-bold">Live Chat</h3>
+                              <button onClick={() => setShowChat(false)} className="text-muted-gray hover:text-white">
+                                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                              </button>
+                          </div>
+                          <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                              {messages.map((msg, i) => (
+                                  <div key={i} className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
+                                      <div className={`px-3 py-2 rounded-lg text-sm max-w-[90%] ${msg.role === 'user' ? 'bg-electric-blue text-white' : 'bg-slate-700 text-slate-200'}`}>
+                                          {msg.text}
+                                      </div>
+                                  </div>
+                              ))}
+                              <div ref={messagesEndRef} />
+                          </div>
+                          <div className="p-3 border-t border-slate-700">
+                              <form onSubmit={handleSendMessage} className="flex gap-2">
+                                  <input 
+                                      type="text" 
+                                      value={inputValue} 
+                                      onChange={e => setInputValue(e.target.value)} 
+                                      className="flex-1 bg-slate-800 text-white text-sm rounded-full px-3 py-2 border border-slate-600 focus:border-electric-blue outline-none"
+                                      placeholder="Type a message..."
+                                  />
+                                  <button type="submit" className="p-2 bg-electric-blue rounded-full text-white">
+                                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                                  </button>
+                              </form>
+                          </div>
+                      </div>
+                  )}
+
+                  {/* User PiP (Picture in Picture) */}
+                  <div className="absolute bottom-24 right-4 w-32 h-24 sm:w-48 sm:h-36 bg-black border border-slate-600 rounded-lg overflow-hidden shadow-2xl z-20 group cursor-move">
+                      {!cameraError && !isCameraOff ? (
                           <video ref={videoRef} autoPlay muted playsInline className="w-full h-full object-cover transform scale-x-[-1]" />
                       ) : (
-                          <div className="w-full h-full flex flex-col items-center justify-center bg-slate-800 text-muted-gray p-2">
-                              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mb-1 opacity-50"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
-                              <span className="text-[10px] text-center leading-tight">Camera Off</span>
+                          <div className="w-full h-full flex flex-col items-center justify-center bg-slate-800 text-muted-gray">
+                              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="opacity-50"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
                           </div>
                       )}
-                      <div className="absolute bottom-1 left-2 text-[10px] font-bold text-white/80">You</div>
+                      <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button onClick={toggleCamera} className="p-1 bg-black/50 rounded text-white hover:bg-white/20">
+                              {isCameraOff ? <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg> : <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>}
+                          </button>
+                      </div>
+                      <div className="absolute bottom-1 left-1 bg-black/60 px-1.5 rounded text-[10px] font-bold text-white">You</div>
                   </div>
+              </div>
+
+              {/* Control Bar */}
+              <div className="h-20 bg-slate-900 border-t border-slate-800 flex items-center justify-center gap-4 sm:gap-8 px-4 z-30">
+                  <button 
+                      onClick={toggleMute}
+                      className={`p-3.5 rounded-full transition-all duration-200 ${isMuted ? 'bg-red-600/20 text-red-500 hover:bg-red-600/30' : 'bg-slate-700/50 text-white hover:bg-slate-600'}`}
+                      title={isMuted ? "Unmute" : "Mute"}
+                  >
+                      {isMuted ? (
+                          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="1" y1="1" x2="23" y2="23"></line><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"></path><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>
+                      ) : (
+                          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>
+                      )}
+                  </button>
+
+                  <button 
+                      onClick={toggleCamera}
+                      className={`p-3.5 rounded-full transition-all duration-200 ${isCameraOff ? 'bg-red-600/20 text-red-500 hover:bg-red-600/30' : 'bg-slate-700/50 text-white hover:bg-slate-600'}`}
+                      title={isCameraOff ? "Turn Camera On" : "Turn Camera Off"}
+                  >
+                      {isCameraOff ? (
+                          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 16v1a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2m5.66 0H14a2 2 0 0 1 2 2v3.34l1 1L23 7v10"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+                      ) : (
+                          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>
+                      )}
+                  </button>
+
+                  <button 
+                      onClick={toggleScreenShare}
+                      className={`p-3.5 rounded-full transition-all ${isScreenSharing ? 'bg-green-600 text-white' : 'bg-slate-700 text-white hover:bg-slate-600'}`}
+                      title="Share Screen"
+                  >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M13 3H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-3"></path><path d="M8 21h8"></path><path d="M12 17v4"></path><path d="m17 8 5-5"></path><path d="M17 3h5v5"></path></svg>
+                  </button>
+
+                  <button 
+                      onClick={() => setShowChat(!showChat)}
+                      className={`p-3.5 rounded-full transition-all relative ${showChat ? 'bg-electric-blue text-white' : 'bg-slate-700 text-white hover:bg-slate-600'}`}
+                      title="Chat"
+                  >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                      {/* Unread indicator could go here */}
+                  </button>
+
+                  <button 
+                      onClick={endVideoCall}
+                      className="px-6 py-2.5 bg-red-600 hover:bg-red-700 text-white font-bold rounded-full shadow-lg transition-all active:scale-95 ml-2"
+                  >
+                      End
+                  </button>
               </div>
           </div>
       )}

@@ -39,6 +39,10 @@ const AiInterview: React.FC<AiInterviewProps> = ({ onBack }) => {
   const [isRecording, setIsRecording] = useState(false);
   const [micError, setMicError] = useState<string | null>(null);
   const [cameraError, setCameraError] = useState(false);
+  
+  // Meeting Controls State
+  const [isMuted, setIsMuted] = useState(false);
+  const [isCameraOff, setIsCameraOff] = useState(false);
 
   const recognitionRef = useRef<any>(null);
   const voicesRef = useRef<SpeechSynthesisVoice[]>([]);
@@ -91,8 +95,17 @@ const AiInterview: React.FC<AiInterviewProps> = ({ onBack }) => {
     };
   }, []);
 
+  // Effect to attach user video stream to video element when it becomes available
+  useEffect(() => {
+    if (state === 'interview' && videoRef.current && streamRef.current) {
+        videoRef.current.srcObject = streamRef.current;
+    }
+  }, [state]);
+
   const startVideo = async () => {
     setCameraError(false);
+    setIsMuted(false);
+    setIsCameraOff(false);
     
     // Check if mediaDevices API is available
     if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) {
@@ -111,11 +124,9 @@ const AiInterview: React.FC<AiInterviewProps> = ({ onBack }) => {
             return;
         }
 
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
         streamRef.current = stream;
-        if (videoRef.current) {
-            videoRef.current.srcObject = stream;
-        }
+        // Stream will be attached via useEffect
     } catch (err) {
         console.error("Error accessing camera:", err);
         setCameraError(true);
@@ -127,6 +138,26 @@ const AiInterview: React.FC<AiInterviewProps> = ({ onBack }) => {
     if (streamRef.current) {
         streamRef.current.getTracks().forEach(track => track.stop());
         streamRef.current = null;
+    }
+  };
+
+  const toggleMute = () => {
+    if (streamRef.current) {
+      streamRef.current.getAudioTracks().forEach(track => track.enabled = !track.enabled);
+      setIsMuted(prev => !prev);
+      
+      // Also update recognition state if needed
+      if (!isMuted && isRecording) {
+          recognitionRef.current?.stop();
+          setIsRecording(false);
+      }
+    }
+  };
+
+  const toggleCamera = () => {
+    if (streamRef.current) {
+      streamRef.current.getVideoTracks().forEach(track => track.enabled = !track.enabled);
+      setIsCameraOff(prev => !prev);
     }
   };
 
@@ -298,40 +329,61 @@ const AiInterview: React.FC<AiInterviewProps> = ({ onBack }) => {
 
   // Avatar Component
   const Avatar = () => {
-      // 3D Avatar URLs (Indian Context)
-      const maleImage = "https://img.freepik.com/free-psd/3d-illustration-human-avatar-profile_23-2150671142.jpg";
-      const femaleImage = "https://img.freepik.com/free-psd/3d-illustration-person-with-long-hair_23-2149436184.jpg";
+      // Photorealistic Images
+      const maleImage = "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=800&q=80";
+      const femaleImage = "https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?auto=format&fit=crop&w=800&q=80";
       
       const avatarSrc = selectedGender === 'male' ? maleImage : femaleImage;
       const interviewerName = selectedGender === 'male' ? 'Arjun' : 'Aditi';
 
       return (
-        <div className="relative flex flex-col justify-center items-center my-6">
-            <div className={`relative w-36 h-36 rounded-full overflow-hidden border-4 transition-all duration-300 ${isSpeaking ? 'border-electric-blue shadow-[0_0_30px_rgba(0,102,255,0.6)] scale-105' : 'border-slate-700'}`}>
-                <img 
+        <div className="relative w-full max-w-4xl mx-auto aspect-video bg-slate-800 rounded-2xl overflow-hidden shadow-2xl border border-slate-600 mb-6 group">
+            {/* Real Avatar Feed */}
+            <div className="absolute inset-0 flex items-center justify-center bg-black">
+                 <img 
                     src={avatarSrc} 
                     alt="AI Interviewer" 
-                    className="w-full h-full object-cover"
+                    className={`w-full h-full object-cover object-top transition-transform duration-300 ${isSpeaking ? 'animate-talking' : 'animate-breathe'}`}
                 />
+                {/* Overlay gradient for text readability */}
+                <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-black/80 to-transparent"></div>
             </div>
-            <div className="mt-3 bg-slate-800 px-4 py-1 rounded-full border border-slate-700 text-center">
-                <span className="text-white font-semibold block">{interviewerName}</span>
-                <span className="text-xs text-electric-blue">({selectedVoiceStyle})</span>
+
+            {/* Name Tag / Status Overlay */}
+            <div className="absolute top-4 left-4 bg-black/40 backdrop-blur-md px-4 py-2 rounded-lg border border-white/10 flex items-center gap-3 z-20">
+                 <div className={`w-3 h-3 rounded-full ${isSpeaking ? 'bg-green-500 animate-pulse' : 'bg-slate-400'}`}></div>
+                 <div>
+                    <span className="text-white font-semibold block leading-tight text-sm shadow-black drop-shadow-md">{interviewerName}</span>
+                    <span className="text-[10px] text-electric-blue uppercase tracking-wider font-bold">{selectedVoiceStyle}</span>
+                 </div>
             </div>
-            {/* Voice Waves Animation */}
-            {isSpeaking && (
-                <>
-                    <div className="absolute top-0 w-36 h-36 rounded-full border border-electric-blue opacity-50 animate-[ping_1.5s_ease-in-out_infinite]"></div>
-                    <div className="absolute top-0 w-36 h-36 rounded-full border border-neon-purple opacity-30 animate-[ping_2s_ease-in-out_infinite_0.5s]"></div>
-                </>
+            
+            {/* Question / Captions Overlay */}
+            {currentQuestion && (
+                <div className="absolute bottom-6 left-6 right-6 z-20">
+                    <div className="bg-black/60 backdrop-blur-md p-4 rounded-xl border border-white/10 text-center">
+                        <p className="text-white text-lg font-medium leading-relaxed drop-shadow-md">
+                            "{currentQuestion}"
+                        </p>
+                        {!isSpeaking && (
+                            <button 
+                                onClick={() => speakText(currentQuestion)}
+                                className="mt-2 text-xs text-electric-blue hover:text-white transition-colors inline-flex items-center gap-1 opacity-80 hover:opacity-100"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+                                Replay
+                            </button>
+                        )}
+                    </div>
+                </div>
             )}
         </div>
       );
   };
 
   return (
-    <div className="animate-slide-in-fade max-w-4xl mx-auto">
-      <button onClick={onBack} className="mb-6 flex items-center text-sm font-medium text-muted-gray hover:text-white transition-all active:scale-95">
+    <div className="animate-slide-in-fade max-w-6xl mx-auto">
+      <button onClick={onBack} className="mb-4 flex items-center text-sm font-medium text-muted-gray hover:text-white transition-all active:scale-95 w-fit">
         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
         Back to Dashboard
       </button>
@@ -340,7 +392,7 @@ const AiInterview: React.FC<AiInterviewProps> = ({ onBack }) => {
         <div className="bg-slate-900/30 backdrop-blur-md border border-slate-700 rounded-2xl p-8 shadow-2xl">
           <div className="text-center mb-10">
             <h1 className="text-3xl font-bold text-white mb-2">AI Avatar Interview Training</h1>
-            <p className="text-muted-gray">Experience a realistic interview with an Indian context. Choose your interviewer and start practicing.</p>
+            <p className="text-muted-gray">Experience a realistic virtual interview. Choose your interviewer, set the tone, and start practicing.</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -377,7 +429,7 @@ const AiInterview: React.FC<AiInterviewProps> = ({ onBack }) => {
                                 : 'bg-slate-800/50 border-slate-700 hover:bg-slate-800'
                             }`}
                         >
-                            <img src="https://img.freepik.com/free-psd/3d-illustration-human-avatar-profile_23-2150671142.jpg" className="w-16 h-16 rounded-full mb-2 object-cover" alt="Male" />
+                            <img src="https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=200&q=80" className="w-16 h-16 rounded-full mb-2 object-cover border-2 border-transparent" alt="Male" />
                             <span className="text-white font-semibold">Arjun</span>
                         </button>
                         <button
@@ -388,7 +440,7 @@ const AiInterview: React.FC<AiInterviewProps> = ({ onBack }) => {
                                 : 'bg-slate-800/50 border-slate-700 hover:bg-slate-800'
                             }`}
                         >
-                             <img src="https://img.freepik.com/free-psd/3d-illustration-person-with-long-hair_23-2149436184.jpg" className="w-16 h-16 rounded-full mb-2 object-cover" alt="Female" />
+                             <img src="https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?auto=format&fit=crop&w=200&q=80" className="w-16 h-16 rounded-full mb-2 object-cover border-2 border-transparent" alt="Female" />
                             <span className="text-white font-semibold">Aditi</span>
                         </button>
                     </div>
@@ -442,160 +494,181 @@ const AiInterview: React.FC<AiInterviewProps> = ({ onBack }) => {
                 onClick={startInterview}
                 className="px-8 py-4 bg-gradient-to-r from-electric-blue to-neon-purple text-white font-bold rounded-xl shadow-lg hover:shadow-electric-blue/25 transition-all transform hover:-translate-y-1 active:scale-95"
             >
-                Start Interview Session
+                Start Virtual Meeting
             </button>
           </div>
         </div>
       )}
 
       {state === 'interview' && (
-        <div className="bg-slate-900/30 backdrop-blur-md border border-slate-700 rounded-2xl p-6 sm:p-8 shadow-2xl relative min-h-[500px]">
-            {/* Info Badges */}
-            <div className="absolute top-4 left-4 flex gap-2 z-10">
-                 {isIntroPhase && <span className="px-3 py-1 bg-yellow-400/20 text-yellow-300 rounded-full text-xs font-mono border border-yellow-400/30">Introduction Phase</span>}
-                <span className="px-3 py-1 bg-slate-800 rounded-full text-xs font-mono text-muted-gray border border-slate-700">
+        <div className="relative min-h-[600px] flex flex-col">
+            {/* Info Badges (Floating) */}
+            <div className="absolute top-4 left-4 flex gap-2 z-30">
+                 {isIntroPhase && <span className="px-3 py-1 bg-yellow-400/20 text-yellow-300 rounded-full text-xs font-mono border border-yellow-400/30 shadow-lg backdrop-blur-sm">Introduction Phase</span>}
+                <span className="px-3 py-1 bg-slate-900/60 rounded-full text-xs font-mono text-muted-gray border border-slate-700 backdrop-blur-sm">
                     {selectedTopic} • {selectedDifficulty}
                 </span>
             </div>
 
-            {/* User Video Feed */}
-            <div className="absolute top-4 right-4 w-32 h-24 sm:w-48 sm:h-36 bg-black rounded-lg border-2 border-slate-600 overflow-hidden shadow-xl z-20">
-                {!cameraError ? (
+            {/* User Video Feed (PiP) - Repositioned inside the Avatar context visually */}
+            <div className="absolute top-4 right-4 w-32 h-24 sm:w-48 sm:h-36 bg-black rounded-xl border-2 border-slate-600/50 overflow-hidden shadow-2xl z-30 transition-all hover:scale-105 hover:border-electric-blue">
+                {!cameraError && !isCameraOff ? (
                     <video 
                         ref={videoRef} 
                         autoPlay 
                         muted 
                         playsInline 
-                        className="w-full h-full object-cover transform scale-x-[-1]" // Mirror effect
+                        className="w-full h-full object-cover transform scale-x-[-1]" 
                     />
                 ) : (
                     <div className="w-full h-full flex flex-col items-center justify-center bg-slate-800 text-muted-gray p-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mb-1 opacity-50"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mb-1 opacity-50"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
                         <span className="text-[10px] text-center leading-tight">Camera Off</span>
                     </div>
                 )}
-                <div className="absolute bottom-1 left-2 text-[10px] text-white/70 font-medium">You</div>
+                <div className="absolute bottom-1 left-2 flex items-center gap-1">
+                    <span className="text-[8px] font-bold text-white/90 bg-black/50 px-1.5 rounded">You</span>
+                    {isMuted && <svg xmlns="http://www.w3.org/2000/svg" width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-red-500"><line x1="1" y1="1" x2="23" y2="23"></line><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"></path><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>}
+                </div>
             </div>
 
-            <Avatar />
+            {/* Main Content Area */}
+            <div className="flex-1 flex flex-col">
+                <Avatar />
 
-            {isLoading && !currentQuestion ? (
-                <div className="text-center py-10">
-                    <p className="text-electric-blue animate-pulse font-medium">Interviewer is thinking...</p>
-                </div>
-            ) : (
-                <>
-                    <div className="text-center mb-8 mt-4">
-                        <h2 className="text-xl sm:text-2xl font-semibold text-white leading-relaxed">"{currentQuestion}"</h2>
-                        <button 
-                            onClick={() => speakText(currentQuestion)}
-                            className="mt-3 text-xs text-electric-blue hover:text-white transition-colors flex items-center justify-center mx-auto gap-1 opacity-80 hover:opacity-100"
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
-                            Repeat
-                        </button>
+                {isLoading && !currentQuestion ? (
+                    <div className="text-center py-6">
+                        <p className="text-electric-blue animate-pulse font-medium">Interviewer is thinking...</p>
                     </div>
-
-                    {!feedback ? (
-                        <div className="max-w-2xl mx-auto">
-                            <div className="relative">
-                                <textarea
-                                    value={userAnswer}
-                                    onChange={(e) => setUserAnswer(e.target.value)}
-                                    placeholder={isIntroPhase ? "Introduce yourself (e.g., Hi, I am...)" : "Type your answer or use the microphone..."}
-                                    className="w-full h-40 bg-slate-800 border border-slate-600 rounded-xl p-4 text-white focus:ring-2 focus:ring-electric-blue focus:outline-none resize-none"
-                                    disabled={isLoading}
-                                />
-                                <button
-                                    onClick={toggleRecording}
-                                    className={`absolute bottom-4 right-4 p-3 rounded-full shadow-lg transition-all active:scale-90 ${
-                                        isRecording ? 'bg-red-500 text-white animate-pulse ring-4 ring-red-500/20' : 'bg-slate-700 text-electric-blue hover:bg-slate-600'
-                                    }`}
-                                    title="Voice Input"
-                                >
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>
-                                </button>
-                            </div>
-                            {micError && <p className="text-red-400 text-xs mt-2 text-center">{micError}</p>}
-
-                            <div className="mt-6 flex justify-center">
-                                <button
-                                    onClick={handleSubmitAnswer}
-                                    disabled={!userAnswer.trim() || isLoading}
-                                    className="px-8 py-3 bg-electric-blue text-white font-bold rounded-lg shadow-lg hover:bg-blue-600 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                                >
-                                    {isLoading ? (
-                                        <>
-                                           <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                                           Processing...
-                                        </>
-                                    ) : (
-                                        isIntroPhase ? "Submit Introduction" : "Submit Answer"
-                                    )}
-                                </button>
-                            </div>
-                        </div>
-                    ) : (
-                        <div className="max-w-3xl mx-auto animate-slide-in-bottom">
-                            <div className="bg-slate-800/80 border border-slate-600 rounded-xl p-6 relative overflow-hidden">
-                                {/* Rating Badge with Remarks */}
-                                <div className="absolute top-0 right-0 p-4 bg-slate-900/50 rounded-bl-xl border-l border-b border-slate-700 text-center w-48">
-                                    <p className="text-xs text-muted-gray uppercase tracking-widest mb-1">Score</p>
-                                    <p className={`text-3xl font-bold mb-1 ${feedback.rating >= 7 ? 'text-green-400' : feedback.rating >= 4 ? 'text-yellow-400' : 'text-red-400'}`}>
-                                        {feedback.rating}/10
-                                    </p>
-                                    <div className={`text-xs font-bold px-2 py-1 rounded mb-2 ${getProficiencyColor(feedback.proficiency)}`}>
-                                        {feedback.proficiency}
-                                    </div>
-                                    <p className="text-xs text-slate-300 italic px-2 border-t border-slate-700 pt-2 leading-tight">
-                                        "{feedback.feedback.substring(0, 50)}{feedback.feedback.length > 50 ? '...' : ''}"
-                                    </p>
+                ) : (
+                    <>
+                        {!feedback ? (
+                            <div className="max-w-3xl mx-auto w-full px-4 mb-4">
+                                <div className="relative">
+                                    <textarea
+                                        value={userAnswer}
+                                        onChange={(e) => setUserAnswer(e.target.value)}
+                                        placeholder={isIntroPhase ? "Introduce yourself (e.g., Hi, I am...)" : "Type your answer or use the microphone..."}
+                                        className="w-full h-32 bg-slate-900/50 backdrop-blur-md border border-slate-600 rounded-xl p-4 text-white focus:ring-2 focus:ring-electric-blue focus:outline-none resize-none shadow-lg"
+                                        disabled={isLoading}
+                                    />
+                                    <button
+                                        onClick={toggleRecording}
+                                        className={`absolute bottom-4 right-4 p-3 rounded-full shadow-lg transition-all active:scale-90 ${
+                                            isRecording ? 'bg-red-500 text-white animate-pulse ring-4 ring-red-500/20' : 'bg-slate-700 text-electric-blue hover:bg-slate-600'
+                                        }`}
+                                        title="Voice Input"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>
+                                    </button>
                                 </div>
+                                {micError && <p className="text-red-400 text-xs mt-2 text-center bg-slate-900/80 inline-block px-2 rounded mx-auto">{micError}</p>}
 
-                                <div className="pr-48"> {/* Padding to avoid overlap with absolute box */}
-                                    <h3 className="text-xl font-bold text-white mb-4">Detailed Feedback</h3>
-                                    
-                                    <div className="space-y-4">
-                                        <div>
-                                            <h4 className="text-sm font-semibold text-aqua-green uppercase tracking-wide mb-1">Remarks</h4>
-                                            <p className="text-muted-gray">{feedback.feedback}</p>
+                                <div className="mt-4 flex justify-center">
+                                    <button
+                                        onClick={handleSubmitAnswer}
+                                        disabled={!userAnswer.trim() || isLoading}
+                                        className="px-8 py-3 bg-electric-blue text-white font-bold rounded-lg shadow-lg hover:bg-blue-600 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                                    >
+                                        {isLoading ? (
+                                            <>
+                                            <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                            Processing...
+                                            </>
+                                        ) : (
+                                            isIntroPhase ? "Submit Introduction" : "Submit Answer"
+                                        )}
+                                    </button>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="max-w-4xl mx-auto w-full px-4 animate-slide-in-bottom mb-4">
+                                <div className="bg-slate-800/90 border border-slate-600 rounded-xl p-6 relative overflow-hidden shadow-2xl">
+                                    {/* Rating Badge with Remarks */}
+                                    <div className="absolute top-0 right-0 p-4 bg-slate-900/80 rounded-bl-xl border-l border-b border-slate-700 text-center w-32 sm:w-48">
+                                        <p className="text-xs text-muted-gray uppercase tracking-widest mb-1">Score</p>
+                                        <p className={`text-3xl font-bold mb-1 ${feedback.rating >= 7 ? 'text-green-400' : feedback.rating >= 4 ? 'text-yellow-400' : 'text-red-400'}`}>
+                                            {feedback.rating}/10
+                                        </p>
+                                        <div className={`text-xs font-bold px-2 py-1 rounded mb-2 ${getProficiencyColor(feedback.proficiency)}`}>
+                                            {feedback.proficiency}
                                         </div>
+                                    </div>
+
+                                    <div className="sm:pr-48"> 
+                                        <h3 className="text-xl font-bold text-white mb-4">Feedback Analysis</h3>
                                         
-                                        <div>
-                                            <h4 className="text-sm font-semibold text-neon-purple uppercase tracking-wide mb-1">Voice Tone Analysis</h4>
-                                            <p className="text-white italic">"{feedback.toneAnalysis}"</p>
-                                        </div>
+                                        <div className="space-y-4">
+                                            <div>
+                                                <h4 className="text-sm font-semibold text-aqua-green uppercase tracking-wide mb-1">Remarks</h4>
+                                                <p className="text-slate-300">{feedback.feedback}</p>
+                                            </div>
+                                            
+                                            <div>
+                                                <h4 className="text-sm font-semibold text-neon-purple uppercase tracking-wide mb-1">Tone Analysis</h4>
+                                                <p className="text-white italic">"{feedback.toneAnalysis}"</p>
+                                            </div>
 
-                                        <div className="bg-slate-700/30 p-4 rounded-lg border border-slate-600/50">
-                                            <h4 className="text-sm font-semibold text-white uppercase tracking-wide mb-2 flex items-center gap-2">
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-yellow-400"><path d="M2 12h20"></path><path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-6"></path><path d="M22 12h-2.22a2 2 0 0 0-1.78 1 2 2 0 0 1-1.78 1h-8.44a2 2 0 0 1-1.78-1 2 2 0 0 0-1.78-1H2"></path></svg>
-                                                Suggested Answer
-                                            </h4>
-                                            <p className="text-sm text-slate-300">{feedback.suggestedImprovement}</p>
+                                            <div className="bg-slate-700/50 p-4 rounded-lg border border-slate-600/50">
+                                                <h4 className="text-sm font-semibold text-white uppercase tracking-wide mb-2 flex items-center gap-2">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-yellow-400"><path d="M2 12h20"></path><path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-6"></path><path d="M22 12h-2.22a2 2 0 0 0-1.78 1 2 2 0 0 1-1.78 1h-8.44a2 2 0 0 1-1.78-1 2 2 0 0 0-1.78-1H2"></path></svg>
+                                                    Better Answer
+                                                </h4>
+                                                <p className="text-sm text-slate-300 leading-relaxed">{feedback.suggestedImprovement}</p>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
 
-                            <div className="mt-8 flex justify-center gap-4">
-                                <button
-                                    onClick={endSession}
-                                    className="px-6 py-3 border border-slate-600 text-muted-gray font-semibold rounded-lg hover:bg-slate-800 hover:text-white transition-all active:scale-95"
-                                >
-                                    End Session
-                                </button>
-                                <button
-                                    onClick={handleNextQuestion}
-                                    className="px-6 py-3 bg-electric-blue text-white font-bold rounded-lg shadow-lg hover:bg-blue-600 transition-all active:scale-95 flex items-center gap-2"
-                                >
-                                    Next Question
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
-                                </button>
+                                <div className="mt-6 flex justify-center gap-4">
+                                    <button
+                                        onClick={handleNextQuestion}
+                                        className="px-6 py-3 bg-electric-blue text-white font-bold rounded-lg shadow-lg hover:bg-blue-600 transition-all active:scale-95 flex items-center gap-2"
+                                    >
+                                        Next Question
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                                    </button>
+                                </div>
                             </div>
-                        </div>
-                    )}
-                </>
-            )}
+                        )}
+                    </>
+                )}
+            </div>
+
+            {/* Meeting Control Bar */}
+            <div className="bg-slate-900/80 backdrop-blur-md rounded-xl p-3 flex justify-center items-center gap-6 border-t border-slate-700 mx-auto w-full max-w-2xl mb-4 shadow-2xl">
+                 <button 
+                      onClick={toggleMute}
+                      className={`p-3.5 rounded-full transition-all duration-200 ${isMuted ? 'bg-red-600/20 text-red-500 hover:bg-red-600/30' : 'bg-slate-700/50 text-white hover:bg-slate-600'}`}
+                      title={isMuted ? "Unmute" : "Mute"}
+                  >
+                      {isMuted ? (
+                          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="1" y1="1" x2="23" y2="23"></line><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"></path><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>
+                      ) : (
+                          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>
+                      )}
+                  </button>
+
+                  <button 
+                      onClick={endSession}
+                      className="px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-full shadow-lg hover:shadow-red-600/30 transition-all transform hover:-translate-y-1 active:scale-95 flex items-center gap-2"
+                  >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7 2 2 0 0 1 1.72 2v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.42 19.42 0 0 1-3.33-2.67m-2.67-3.34a19.79 19.79 0 0 1-3.07-8.63A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91"></path><line x1="23" y1="1" x2="1" y2="23"></line></svg>
+                      End Call
+                  </button>
+
+                  <button 
+                      onClick={toggleCamera}
+                      className={`p-3.5 rounded-full transition-all duration-200 ${isCameraOff ? 'bg-red-600/20 text-red-500 hover:bg-red-600/30' : 'bg-slate-700/50 text-white hover:bg-slate-600'}`}
+                      title={isCameraOff ? "Turn Camera On" : "Turn Camera Off"}
+                  >
+                      {isCameraOff ? (
+                          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 16v1a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2m5.66 0H14a2 2 0 0 1 2 2v3.34l1 1L23 7v10"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+                      ) : (
+                          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>
+                      )}
+                  </button>
+            </div>
         </div>
       )}
     </div>

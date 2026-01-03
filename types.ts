@@ -1,5 +1,3 @@
-
-// FIX: Import React to provide the 'React' namespace for React.ReactNode.
 import React from 'react';
 
 export interface Mentor {
@@ -15,6 +13,7 @@ export interface Mentor {
 export interface GroundingSource {
   uri: string;
   title: string;
+  sources?: GroundingSource[];
 }
 
 export interface GroundedResponse {
@@ -56,8 +55,8 @@ export interface Message {
 }
 
 export interface Notification {
-  id: number;
-  type: 'workshop' | 'message' | 'challenge' | 'system';
+  id: number | string;
+  type: 'workshop' | 'message' | 'challenge' | 'system' | 'task';
   title: string;
   description: string;
   timestamp: string;
@@ -109,6 +108,9 @@ export interface InterviewFeedback {
 
 export interface AtsAnalysis {
   matchScore: number; // 0-100
+  skillsScore: number; // 0-100
+  experienceScore: number; // 0-100
+  formattingScore: number; // 0-100
   summary: string;
   missingKeywords: string[];
   formattingIssues: string[];
@@ -118,3 +120,5 @@ export interface AtsAnalysis {
 export type VoiceStyle = 'Friendly' | 'Formal' | 'Calm' | 'Energetic';
 
 export type ActiveView = 'home' | 'mentor' | 'workshop' | 'profile' | 'tasks' | 'certificates' | 'interview' | 'ats' | 'mentors';
+
+export type WorkStatus = 'idle' | 'working' | 'lunch' | 'break';

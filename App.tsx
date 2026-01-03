@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import Onboarding from './components/Onboarding';
@@ -15,8 +15,8 @@ import CertificateGenerator from './components/CertificateGenerator';
 import AiInterview from './components/AiInterview';
 import AtsResumeChecker from './components/AtsResumeChecker';
 import AchievementToast from './components/AchievementToast';
-import { Mentor, Workshop, UserAchievement, Badge, Task, ActiveView } from './types';
-import { USER_ACHIEVEMENTS, TASKS, BADGES, ACHIEVEMENT_CRITERIA } from './constants';
+import { Mentor, Workshop, UserAchievement, Badge, Task, ActiveView, Notification } from './types';
+import { USER_ACHIEVEMENTS, TASKS, BADGES, ACHIEVEMENT_CRITERIA, NOTIFICATIONS } from './constants';
 
 const App: React.FC = () => {
   const [isOnboarded, setIsOnboarded] = useState(false);
@@ -32,12 +32,103 @@ const App: React.FC = () => {
   const [tasks, setTasks] = useState<Task[]>(TASKS);
   const [unlockedBadge, setUnlockedBadge] = useState<Badge | null>(null);
 
+  // Lifted Notification State
+  const [notifications, setNotifications] = useState<Notification[]>(NOTIFICATIONS);
+
+  // Daily Streak Logic
+  const [streak, setStreak] = useState(0);
+
+  useEffect(() => {
+    const lastActiveDate = localStorage.getItem('lastActiveDate');
+    const streakCount = parseInt(localStorage.getItem('dailyStreak') || '0', 10);
+    const today = new Date().toDateString();
+
+    if (lastActiveDate !== today) {
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        
+        if (lastActiveDate === yesterday.toDateString()) {
+            const newStreak = streakCount + 1;
+            setStreak(newStreak);
+            localStorage.setItem('dailyStreak', newStreak.toString());
+        } else {
+             // Streak broken or first time
+             setStreak(1);
+             localStorage.setItem('dailyStreak', '1');
+        }
+        localStorage.setItem('lastActiveDate', today);
+    } else {
+        setStreak(streakCount);
+    }
+  }, []);
+
+  // Check for due tasks and generate notifications
+  useEffect(() => {
+    const dueTasks = tasks.filter(task => !task.completed && task.dueDate);
+    const today = new Date();
+    today.setHours(0,0,0,0);
+
+    setNotifications(prevNotifications => {
+        const newNotifications: Notification[] = [];
+        const existingIds = new Set(prevNotifications.map(n => n.id));
+
+        dueTasks.forEach(task => {
+            if (!task.dueDate) return;
+            const dueDate = new Date(task.dueDate);
+            // Adjust for timezone to compare dates correctly
+            dueDate.setMinutes(dueDate.getMinutes() + dueDate.getTimezoneOffset());
+            dueDate.setHours(0,0,0,0);
+
+            const diffTime = dueDate.getTime() - today.getTime();
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+            let title = '';
+            let description = '';
+
+            if (diffDays < 0) {
+                title = 'Overdue Task';
+                description = `"${task.text}" was due on ${task.dueDate}.`;
+            } else if (diffDays === 0) {
+                title = 'Task Due Today';
+                description = `"${task.text}" is due today.`;
+            }
+
+            if (title) {
+                const notificationId = `task-${task.id}`;
+                if (!existingIds.has(notificationId)) {
+                    newNotifications.push({
+                        id: notificationId,
+                        type: 'task',
+                        title,
+                        description,
+                        timestamp: 'Just now',
+                        read: false
+                    });
+                }
+            }
+        });
+
+        if (newNotifications.length > 0) {
+            return [...newNotifications, ...prevNotifications];
+        }
+        return prevNotifications;
+    });
+  }, [tasks]);
+
   const handleOnboardingComplete = () => {
     setIsOnboarded(true);
   };
 
   const handleProfileComplete = () => {
     setIsProfileComplete(true);
+  };
+
+  const handleLogout = () => {
+    // Reset core states to simulate logging out
+    setIsOnboarded(false);
+    setIsProfileComplete(false);
+    setActiveView('home');
+    setIsPro(false);
   };
 
   const handleSelectMentor = (mentor: Mentor) => {
@@ -99,6 +190,9 @@ const App: React.FC = () => {
     // For simplicity with the existing Dashboard component structure, 
     // we will pass this handler to the Dashboard which manages the confirmation modal.
     setTasks(prev => prev.filter(t => t.id !== id));
+    
+    // Also remove associated notification if it exists
+    setNotifications(prev => prev.filter(n => n.id !== `task-${id}`));
   };
 
   const handleToggleTask = (id: number) => {
@@ -114,6 +208,11 @@ const App: React.FC = () => {
     );
 
     setTasks(newTasks);
+
+    // If completed, remove task notification
+    if (newCompletedStatus) {
+        setNotifications(prev => prev.filter(n => n.id !== `task-${id}`));
+    }
 
     // Badge Logic
     if (newCompletedStatus) {
@@ -131,6 +230,19 @@ const App: React.FC = () => {
         }
       });
     }
+  };
+
+  // Notification Handlers
+  const handleDismissNotification = (id: number | string) => {
+      setNotifications(prev => prev.filter(n => n.id !== id));
+  };
+
+  const handleClearNotifications = () => {
+      setNotifications([]);
+  };
+
+  const handleMarkNotificationsRead = () => {
+      setNotifications(prev => prev.map(n => ({ ...n, read: true })));
   };
 
 
@@ -174,7 +286,17 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-dark-slate text-white">
-      <Header onNavigate={handleNavigate} activeView={activeView} isPro={isPro} />
+      <Header 
+        onNavigate={handleNavigate} 
+        activeView={activeView} 
+        isPro={isPro} 
+        onLogout={handleLogout} 
+        streak={streak}
+        notifications={notifications}
+        onDismissNotification={handleDismissNotification}
+        onClearNotifications={handleClearNotifications}
+        onMarkNotificationsRead={handleMarkNotificationsRead}
+      />
       <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {renderContent()}
       </main>

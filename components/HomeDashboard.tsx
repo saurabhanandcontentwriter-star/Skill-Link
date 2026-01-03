@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { MENTORS, WORKSHOPS, COURSES, PRO_FEATURES, TASKS } from '../constants';
 import MentorCard from './MentorCard';
 import Hero from './Hero';
+import InspirationSection from './InspirationSection';
 import { Mentor, Workshop, Course, ProFeature, RecommendedCourse } from '../types';
 import CourseModal from './CourseModal';
 import ProFeatureModal from './ProFeatureModal';
@@ -85,6 +86,10 @@ const HomeDashboard: React.FC<HomeDashboardProps> = ({ onSelectMentor, onSelectW
   return (
     <div className="space-y-16 sm:space-y-24 animate-slide-in-fade">
       <Hero />
+
+      <div className="max-w-5xl mx-auto px-4">
+        <InspirationSection />
+      </div>
       
       {/* Top Mentors Section */}
       <section>

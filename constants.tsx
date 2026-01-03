@@ -64,6 +64,19 @@ export const COURSES: Course[] = [
     { title: 'Full-Stack Web Development', platform: 'Udemy', description: 'Learn to build and deploy modern web applications from scratch.' },
 ];
 
+export const TECH_QUOTES = [
+  { text: "The best way to predict the future is to invent it.", author: "Alan Kay" },
+  { text: "Programming isn't about what you know; it's about what you can figure out.", author: "Chris Pine" },
+  { text: "The only way to do great work is to love what you do.", author: "Steve Jobs" },
+  { text: "Knowledge is power. Information is liberating. Education is the premise of progress.", author: "Kofi Annan" },
+  { text: "Talk is cheap. Show me the code.", author: "Linus Torvalds" },
+  { text: "Computers are good at following instructions, but not at reading your mind.", author: "Donald Knuth" },
+  { text: "The most damaging phrase in the language is: 'It's always been done this way.'", author: "Grace Hopper" },
+  { text: "Move fast and break things. Unless you are breaking stuff, you are not moving fast enough.", author: "Mark Zuckerberg" },
+  { text: "Simplicity is the soul of efficiency.", author: "Austin Freeman" },
+  { text: "First, solve the problem. Then, write the code.", author: "John Johnson" }
+];
+
 
 export const Logo: React.FC<{ className?: string }> = ({ className }) => (
     <svg className={className} viewBox="0 0 200 40" fill="none" xmlns="http://www.w3.org/2000/svg">

@@ -42,18 +42,22 @@ const AtsResumeChecker: React.FC<AtsResumeCheckerProps> = ({ onBack }) => {
       const reader = new FileReader();
       reader.onload = (event) => {
           const result = event.target?.result as string;
-          // Extract base64 part (remove "data:application/pdf;base64," prefix)
-          const base64 = result.split(',')[1];
-          setResumeFile({
-              name: file.name,
-              base64: base64
-          });
+          if (result) {
+            // Extract base64 part (remove "data:application/pdf;base64," prefix)
+            const base64 = result.split(',')[1];
+            setResumeFile({
+                name: file.name,
+                base64: base64
+            });
+          }
       };
       reader.readAsDataURL(file);
     }
   };
 
   const handleAnalyze = async () => {
+    setResult(null); // Clear previous results
+    
     if (!jobDescription.trim()) {
         alert("Please enter a Job Description.");
         return;
@@ -70,6 +74,7 @@ const AtsResumeChecker: React.FC<AtsResumeCheckerProps> = ({ onBack }) => {
     }
     
     setIsAnalyzing(true);
+    
     try {
         let resumeContent;
         if (inputMode === 'file' && resumeFile) {
@@ -96,11 +101,15 @@ const AtsResumeChecker: React.FC<AtsResumeCheckerProps> = ({ onBack }) => {
     }
   };
 
-  const getScoreColor = (score: number) => {
-    if (score >= 80) return 'text-green-400 border-green-500';
-    if (score >= 60) return 'text-yellow-400 border-yellow-500';
-    return 'text-red-400 border-red-500';
+  const getGradeInfo = (score: number) => {
+    if (score >= 90) return { grade: 'A+', label: 'Excellent Match', color: 'text-emerald-400', borderColor: 'border-emerald-500', bgColor: 'bg-emerald-500/10', barColor: 'bg-emerald-500' };
+    if (score >= 80) return { grade: 'A', label: 'Strong Match', color: 'text-green-400', borderColor: 'border-green-500', bgColor: 'bg-green-500/10', barColor: 'bg-green-500' };
+    if (score >= 70) return { grade: 'B', label: 'Good Match', color: 'text-blue-400', borderColor: 'border-blue-500', bgColor: 'bg-blue-500/10', barColor: 'bg-blue-500' };
+    if (score >= 60) return { grade: 'C', label: 'Average Match', color: 'text-yellow-400', borderColor: 'border-yellow-500', bgColor: 'bg-yellow-500/10', barColor: 'bg-yellow-500' };
+    return { grade: 'D', label: 'Weak Match', color: 'text-red-400', borderColor: 'border-red-500', bgColor: 'bg-red-500/10', barColor: 'bg-red-500' };
   };
+
+  const gradeInfo = result ? getGradeInfo(result.matchScore) : null;
 
   return (
     <div className="animate-slide-in-fade max-w-4xl mx-auto">
@@ -211,13 +220,13 @@ const AtsResumeChecker: React.FC<AtsResumeCheckerProps> = ({ onBack }) => {
       </div>
 
       {/* Result Modal */}
-      {showModal && result && (
+      {showModal && result && gradeInfo && (
         <div 
             className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in"
             onClick={() => setShowModal(false)}
         >
             <div 
-                className="bg-slate-800 border border-slate-700 rounded-2xl p-6 sm:p-8 shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto relative animate-pop-in"
+                className="bg-slate-800 border border-slate-700 rounded-2xl p-6 sm:p-8 shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto relative animate-pop-in"
                 onClick={e => e.stopPropagation()}
             >
                 <button 
@@ -231,16 +240,50 @@ const AtsResumeChecker: React.FC<AtsResumeCheckerProps> = ({ onBack }) => {
                     <span className="text-3xl">📊</span> Analysis Results
                 </h2>
 
-                {/* Score Card */}
-                <div className="flex flex-col sm:flex-row items-center gap-6 border-b border-slate-700 pb-6 mb-6">
-                        <div className={`relative w-28 h-28 flex-shrink-0 rounded-full border-4 flex items-center justify-center shadow-lg ${getScoreColor(result.matchScore)}`}>
-                        <span className="text-4xl font-extrabold">{result.matchScore}%</span>
-                        <div className="absolute -bottom-3 px-3 py-1 bg-slate-900 border border-slate-700 rounded-full text-xs text-muted-gray uppercase tracking-widest font-bold">Match</div>
+                {/* Main Score Card */}
+                <div className="flex flex-col md:flex-row gap-6 mb-8 items-start border-b border-slate-700 pb-8">
+                    {/* Score Circle */}
+                    <div className="flex-shrink-0 flex flex-col items-center mx-auto md:mx-0">
+                        <div className={`relative w-40 h-40 rounded-full border-8 flex flex-col items-center justify-center shadow-[0_0_20px_rgba(0,0,0,0.3)] ${gradeInfo.borderColor} ${gradeInfo.bgColor}`}>
+                            <span className={`text-5xl font-extrabold ${gradeInfo.color}`}>{result.matchScore}%</span>
+                            <span className={`text-sm font-bold uppercase tracking-wider mt-1 ${gradeInfo.color}`}>{gradeInfo.grade} Grade</span>
                         </div>
-                        <div className="text-center sm:text-left">
-                        <h3 className="text-lg font-bold text-white">Summary</h3>
-                        <p className="text-sm text-muted-gray mt-2 leading-relaxed">{result.summary}</p>
+                        <div className={`mt-4 px-4 py-1.5 rounded-full text-sm font-bold border ${gradeInfo.borderColor} ${gradeInfo.color} bg-slate-900`}>
+                            {gradeInfo.label}
                         </div>
+                    </div>
+
+                    {/* Summary */}
+                    <div className="flex-1 space-y-4">
+                        <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-700">
+                            <h3 className="text-xs font-bold text-muted-gray uppercase tracking-widest mb-2">AI Analysis Summary</h3>
+                            <p className="text-slate-200 leading-relaxed text-sm">{result.summary}</p>
+                        </div>
+                        
+                        <div className="grid grid-cols-3 gap-3">
+                             <div className="bg-slate-900/50 p-3 rounded-lg border border-slate-700 text-center">
+                                <span className="block text-xs text-muted-gray mb-1">Skills</span>
+                                <div className="text-lg font-bold text-white mb-1">{result.skillsScore}%</div>
+                                <div className="w-full bg-slate-700 rounded-full h-1">
+                                    <div className={`h-1 rounded-full ${getGradeInfo(result.skillsScore).barColor}`} style={{width: `${result.skillsScore}%`}}></div>
+                                </div>
+                             </div>
+                             <div className="bg-slate-900/50 p-3 rounded-lg border border-slate-700 text-center">
+                                <span className="block text-xs text-muted-gray mb-1">Experience</span>
+                                <div className="text-lg font-bold text-white mb-1">{result.experienceScore}%</div>
+                                <div className="w-full bg-slate-700 rounded-full h-1">
+                                    <div className={`h-1 rounded-full ${getGradeInfo(result.experienceScore).barColor}`} style={{width: `${result.experienceScore}%`}}></div>
+                                </div>
+                             </div>
+                             <div className="bg-slate-900/50 p-3 rounded-lg border border-slate-700 text-center">
+                                <span className="block text-xs text-muted-gray mb-1">Format</span>
+                                <div className="text-lg font-bold text-white mb-1">{result.formattingScore}%</div>
+                                <div className="w-full bg-slate-700 rounded-full h-1">
+                                    <div className={`h-1 rounded-full ${getGradeInfo(result.formattingScore).barColor}`} style={{width: `${result.formattingScore}%`}}></div>
+                                </div>
+                             </div>
+                        </div>
+                    </div>
                 </div>
 
                 {/* Content */}
