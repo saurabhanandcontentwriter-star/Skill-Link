@@ -4,6 +4,7 @@ import { MENTORS, WORKSHOPS, COURSES, PRO_FEATURES, TASKS } from '../constants';
 import MentorCard from './MentorCard';
 import Hero from './Hero';
 import InspirationSection from './InspirationSection';
+import AiBoatCommunications from './AiBoatCommunications';
 import { Mentor, Workshop, Course, ProFeature, RecommendedCourse } from '../types';
 import CourseModal from './CourseModal';
 import ProFeatureModal from './ProFeatureModal';
@@ -90,6 +91,8 @@ const HomeDashboard: React.FC<HomeDashboardProps> = ({ onSelectMentor, onSelectW
       <div className="max-w-5xl mx-auto px-4">
         <InspirationSection />
       </div>
+
+      <AiBoatCommunications />
       
       {/* Top Mentors Section */}
       <section>
